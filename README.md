@@ -1,2 +1,2 @@
 # status
-Status server 
+Status server for github.com/practable
