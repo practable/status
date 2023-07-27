@@ -11,12 +11,13 @@ require (
 	github.com/go-openapi/swag v0.22.4
 	github.com/go-openapi/validate v0.22.1
 	github.com/jessevdk/go-flags v1.5.0
-	github.com/practable/jump v0.3.0
-	github.com/practable/relay v0.6.4
+	github.com/practable/jump v0.3.3-0.20230727224731-266ee2a11518
+	github.com/practable/relay v0.6.7-0.20230727225526-1455418648cf
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.8.3
+	golang.org/x/exp v0.0.0-20230725093048-515e97ebf090
 	golang.org/x/net v0.12.0
 )
 

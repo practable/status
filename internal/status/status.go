@@ -3,9 +3,9 @@ package status
 import (
 	"context"
 	"errors"
+	"fmt"
 	"path"
 	"regexp"
-	"strings"
 	"sync"
 	"time"
 
@@ -13,6 +13,7 @@ import (
 	rc "github.com/practable/relay/pkg/status"
 	"github.com/practable/relay/pkg/token"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/slices"
 )
 
 //ro "github.com/practable/status/internal/relay/operations"
@@ -46,22 +47,35 @@ type Config struct {
 // Status represents the overall status of the experiments
 type Status struct {
 	*sync.RWMutex
-	IPAddress  map[string]string
-	Experiment map[string]Report
+	Experiments map[string]Report
 }
 
 // Report represents the status
 type Report struct {
-	Healthy bool
-	Streams map[string]bool
-	Reports map[string]rc.Report
+	Healthy        bool
+	JumpOK         bool
+	JumpReport     jc.Report
+	StreamOK       map[string]bool
+	StreamReports  map[string]rc.Report
+	StreamRequired map[string]bool
+}
+
+func NewReport() Report {
+	return Report{
+		Healthy:        false,
+		JumpOK:         false,
+		JumpReport:     jc.Report{},
+		StreamOK:       make(map[string]bool),
+		StreamReports:  make(map[string]rc.Report),
+		StreamRequired: make(map[string]bool),
+	}
+
 }
 
 // New returns an Status with initialised maps
 func New() *Status {
 	return &Status{
 		&sync.RWMutex{},
-		make(map[string]string),
 		make(map[string]Report),
 	}
 
@@ -88,6 +102,21 @@ func Serve(ctx context.Context, wg *sync.WaitGroup, config Config) {
 
 	go processRelay(ctx, s, r, config)
 	go processJump(ctx, s, j)
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(5 * time.Second):
+				fmt.Printf("\nSTATUS\n*******\n")
+				for k, v := range s.Experiments {
+					fmt.Printf("%s:%+v\n", k, v)
+				}
+			}
+		}
+
+	}()
 
 	<-ctx.Done()
 	log.Trace("Status done")
@@ -202,13 +231,25 @@ func (s *Status) updateFromJump(reports []jc.Report) {
 
 	for _, r := range reports {
 
-		if strings.Contains(r.Topic, "/") {
-			continue // only host connections have no slash in the topic
+		// skip non-hosts
+		if !slices.Contains(r.Scopes, "host") {
+			continue
 		}
 
-		s.IPAddress[r.Topic] = strings.TrimSpace(r.RemoteAddr)
+		// initialise experiment's entry if not yet present
+		if _, ok := s.Experiments[r.Topic]; !ok {
+			s.Experiments[r.Topic] = NewReport()
+		}
 
+		expt := s.Experiments[r.Topic]
+		expt.JumpReport = r
+		expt.JumpOK = true //assume that a live connection is equivalent to a healthy one
+
+		s.Experiments[r.Topic] = expt
 	}
+
+	s.UpdateHealth()
+
 }
 
 func (s *Status) updateFromRelay(reports []rc.Report, config Config) {
@@ -221,24 +262,14 @@ func (s *Status) updateFromRelay(reports []rc.Report, config Config) {
 		if err != nil {
 			continue
 		}
-
-		// check IP address is in map of experiments
-
-		if _, ok := s.IPAddress[id]; !ok {
-			continue // can't process if don't have an IP to check
+		// skip non-expts
+		if !slices.Contains(r.Scopes, "expt") {
+			continue
 		}
 
-		if s.IPAddress[id] != strings.TrimSpace(r.RemoteAddr) {
-			continue // no match means not an experiment, must be a user connection
-		}
-
-		if _, ok := s.Experiment[id]; !ok {
-
-			s.Experiment[id] = Report{
-				false,
-				make(map[string]bool),
-				make(map[string]rc.Report),
-			}
+		// initialise experiment's entry if not yet present
+		if _, ok := s.Experiments[id]; !ok {
+			s.Experiments[id] = NewReport()
 		}
 
 		stream, err := getStream(r.Topic)
@@ -246,34 +277,25 @@ func (s *Status) updateFromRelay(reports []rc.Report, config Config) {
 			continue
 		}
 
-		exp := s.Experiment[id]
+		exp := s.Experiments[id]
 
-		exp.Reports[stream] = r
+		exp.StreamReports[stream] = r
 
-		exp.Streams[stream] = true
+		exp.StreamOK[stream] = true
 
 		if r.Stats.Tx.Last > config.HealthyDuration {
-			exp.Streams[stream] = false
+			exp.StreamOK[stream] = false
 		}
 
 		if r.Stats.Tx.Never == true {
-			exp.Streams[stream] = false
+			exp.StreamOK[stream] = false
 		}
 
-		//TODO update to compare to the booking manifest's required streams
-		// this check can give false positive if a stream is missing entirely
-		// e.g. if experiment is misconfigured
-		exp.Healthy = true
-
-		for _, healthy := range exp.Streams {
-			if !healthy {
-				exp.Healthy = false
-			}
-		}
-
-		s.Experiment[id] = exp
+		s.Experiments[id] = exp
 
 	}
+
+	s.UpdateHealth()
 }
 
 func getID(str string) (string, error) {
@@ -296,5 +318,41 @@ func getStream(str string) (string, error) {
 	}
 
 	return "", errors.New("not found")
+
+}
+
+func (s *Status) UpdateHealth() {
+
+	hm := make(map[string]bool)
+
+	for k, v := range s.Experiments {
+
+		// jump must be ok
+		h := v.JumpOK
+
+		// all required streams must be present
+		for stream, _ := range v.StreamRequired {
+			if _, ok := v.StreamOK[stream]; !ok {
+				h = false
+			}
+		}
+
+		// all streams must be healthy (even if not required)
+		for _, sok := range v.StreamOK {
+			h = h && sok
+		}
+
+		hm[k] = h
+
+	}
+
+	// update Experimentss map entires with their overall health
+	expt := s.Experiments
+	for k, v := range hm {
+		r := expt[k]
+		r.Healthy = v
+		expt[k] = r
+	}
+	s.Experiments = expt
 
 }
