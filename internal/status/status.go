@@ -28,7 +28,9 @@ type Config struct {
 	EmailPassword       string
 	EmailPort           int
 	EmailTo             string
-	HealthyDuration     time.Duration
+	HealthEvents        int
+	HealthLast          time.Duration
+	HealthStartup       time.Duration
 	HostBook            string
 	HostJump            string
 	HostRelay           string
@@ -47,22 +49,43 @@ type Config struct {
 // Status represents the overall status of the experiments
 type Status struct {
 	*sync.RWMutex
+	Config      Config
 	Experiments map[string]Report
+}
+
+type HealthyIssues struct {
+	Healthy bool
+	Issues  []string
+}
+
+type HealthEvent struct {
+	Healthy  bool
+	When     time.Time
+	JumpOK   bool
+	StreamOK map[string]bool
+	Issues   []string
 }
 
 // Report represents the status
 type Report struct {
-	Healthy        bool
-	JumpOK         bool
-	JumpReport     jc.Report
-	StreamOK       map[string]bool
-	StreamReports  map[string]rc.Report
-	StreamRequired map[string]bool
+	FirstChecked       time.Time
+	LastCheckedJump    time.Time
+	LastCheckedStreams time.Time
+	Healthy            bool
+	HealthEvents       []HealthEvent
+	JumpOK             bool
+	JumpReport         jc.Report
+	StreamOK           map[string]bool
+	StreamReports      map[string]rc.Report
+	StreamRequired     map[string]bool
 }
 
 func NewReport() Report {
+
 	return Report{
+		FirstChecked:   time.Now(),
 		Healthy:        false,
+		HealthEvents:   []HealthEvent{},
 		JumpOK:         false,
 		JumpReport:     jc.Report{},
 		StreamOK:       make(map[string]bool),
@@ -76,9 +99,15 @@ func NewReport() Report {
 func New() *Status {
 	return &Status{
 		&sync.RWMutex{},
+		Config{},
 		make(map[string]Report),
 	}
 
+}
+
+func (s *Status) WithConfig(config Config) *Status {
+	s.Config = config
+	return s
 }
 
 // just pass in a context?
@@ -93,15 +122,15 @@ func Serve(ctx context.Context, wg *sync.WaitGroup, config Config) {
 	// extend to include jump
 	// figure out IP to make sure clients don't fool us into thinking host is present
 	// extend to check book for current availability status
-	s := New()
+	s := New().WithConfig(config)
 	r := rc.New()
 	j := jc.New()
 
 	go connectRelay(ctx, config, r)
 	go connectJump(ctx, config, j)
 
-	go processRelay(ctx, s, r, config)
-	go processJump(ctx, s, j)
+	go s.processRelay(ctx, r)
+	go s.processJump(ctx, j)
 
 	go func() {
 		for {
@@ -187,37 +216,37 @@ func connectJump(ctx context.Context, config Config, j *jc.Status) {
 	}
 }
 
-func processRelay(ctx context.Context, s *Status, r *rc.Status, config Config) {
+func (s *Status) processRelay(ctx context.Context, r *rc.Status) {
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case status, ok := <-r.Status:
+		case reports, ok := <-r.Status:
 			if !ok {
 				log.Error("relay status channel not ok, stopping processing status")
 				return
 			}
 
-			s.updateFromRelay(status, config)
+			s.updateFromRelay(reports)
 
 		}
 	}
 }
 
-func processJump(ctx context.Context, s *Status, j *jc.Status) {
+func (s *Status) processJump(ctx context.Context, j *jc.Status) {
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case status, ok := <-j.Status:
+		case reports, ok := <-j.Status:
 			if !ok {
 				log.Error("jump status channel not ok, stopping processing status")
 				return
 			}
 
-			s.updateFromJump(status)
+			s.updateFromJump(reports)
 
 		}
 
@@ -228,7 +257,7 @@ func processJump(ctx context.Context, s *Status, j *jc.Status) {
 func (s *Status) updateFromJump(reports []jc.Report) {
 	s.Lock()
 	defer s.Unlock()
-
+	now := time.Now()
 	for _, r := range reports {
 
 		// skip non-hosts
@@ -243,6 +272,7 @@ func (s *Status) updateFromJump(reports []jc.Report) {
 
 		expt := s.Experiments[r.Topic]
 		expt.JumpReport = r
+		expt.LastCheckedJump = now
 		expt.JumpOK = true //assume that a live connection is equivalent to a healthy one
 
 		s.Experiments[r.Topic] = expt
@@ -252,9 +282,11 @@ func (s *Status) updateFromJump(reports []jc.Report) {
 
 }
 
-func (s *Status) updateFromRelay(reports []rc.Report, config Config) {
+func (s *Status) updateFromRelay(reports []rc.Report) {
 	s.Lock()
 	defer s.Unlock()
+
+	now := time.Now()
 
 	for _, r := range reports {
 
@@ -277,21 +309,23 @@ func (s *Status) updateFromRelay(reports []rc.Report, config Config) {
 			continue
 		}
 
-		exp := s.Experiments[id]
+		expt := s.Experiments[id]
 
-		exp.StreamReports[stream] = r
+		expt.StreamReports[stream] = r
 
-		exp.StreamOK[stream] = true
+		expt.StreamOK[stream] = true
 
-		if r.Stats.Tx.Last > config.HealthyDuration {
-			exp.StreamOK[stream] = false
+		if r.Stats.Tx.Last > s.Config.HealthLast {
+			expt.StreamOK[stream] = false
 		}
 
 		if r.Stats.Tx.Never == true {
-			exp.StreamOK[stream] = false
+			expt.StreamOK[stream] = false
 		}
 
-		s.Experiments[id] = exp
+		expt.LastCheckedStreams = now
+
+		s.Experiments[id] = expt
 
 	}
 
@@ -323,34 +357,91 @@ func getStream(str string) (string, error) {
 
 func (s *Status) UpdateHealth() {
 
-	hm := make(map[string]bool)
+	hm := make(map[string]HealthyIssues)
+
+	now := time.Now()
 
 	for k, v := range s.Experiments {
 
 		// jump must be ok
-		h := v.JumpOK
+		h := true
+		issues := []string{}
+
+		if !v.JumpOK {
+			h = false
+			issues = append(issues, "jump present but not ok")
+		}
+
+		// jump must have been recently checked
+		if !(v.LastCheckedJump.Add(s.Config.HealthLast)).After(now) {
+			h = false
+			issues = append(issues, "jump missing")
+		}
 
 		// all required streams must be present
 		for stream, _ := range v.StreamRequired {
 			if _, ok := v.StreamOK[stream]; !ok {
 				h = false
+				issues = append(issues, "required stream missing ("+stream+")")
 			}
 		}
 
-		// all streams must be healthy (even if not required)
-		for _, sok := range v.StreamOK {
-			h = h && sok
+		// the streams must have been recently checked
+		if !(v.LastCheckedStreams.Add(s.Config.HealthLast)).After(now) {
+			h = false
+			issues = append(issues, "no current streams")
 		}
 
-		hm[k] = h
+		// all streams must be healthy (even if not required)
+		for stream, sok := range v.StreamOK {
+			if !sok {
+				h = false
+				issues = append(issues, "stream unhealthy ("+stream+")")
+			}
+		}
+
+		hm[k] = HealthyIssues{
+			Healthy: h,
+			Issues:  issues,
+		}
 
 	}
 
-	// update Experimentss map entires with their overall health
+	// update Experiments map entires with their overall health
+	// make an alert map of experiments that have just become healthy or unhealthy
+	// alert map
+
 	expt := s.Experiments
 	for k, v := range hm {
 		r := expt[k]
-		r.Healthy = v
+
+		// skip adding health events until experiment has had a chance to
+		// get complete information from jump and relay
+		// typically set HealthStartup to 3x the slowest reporting period
+		// from jump / relay
+		if now.Before(r.FirstChecked.Add(s.Config.HealthStartup)) {
+			continue
+		}
+
+		// add event if health has changed, or if no event previously registered
+		if r.Healthy != v.Healthy || len(r.HealthEvents) == 0 {
+			he := HealthEvent{
+				Healthy:  v.Healthy,
+				When:     now,
+				JumpOK:   r.JumpOK,
+				StreamOK: r.StreamOK,
+				Issues:   v.Issues,
+			}
+
+			r.HealthEvents = append(r.HealthEvents, he)
+
+			if len(r.HealthEvents) > s.Config.HealthEvents {
+				r.HealthEvents = r.HealthEvents[len(r.HealthEvents)-s.Config.HealthEvents:]
+			}
+		}
+
+		r.Healthy = v.Healthy
+
 		expt[k] = r
 	}
 	s.Experiments = expt

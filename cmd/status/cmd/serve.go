@@ -58,7 +58,9 @@ export STATUS_EMAIL_HOST=stmp.b.org
 export STATUS_EMAIL_PASSWORD=something
 export STATUS_EMAIL_PORT=587
 export STATUS_EMAIL_TO=some@a.org
-export STATUS_HEALTHY_DURATION=
+export STATUS_HEALTH_LAST=10s
+export STATUS_HEALTH_EVENTS=100
+export STATUS_HEALTH_STARTUP=1m
 export STATUS_HOST_BOOK=app.practable.io
 export STATUS_HOST_JUMP=app.practable.io
 export STATUS_HOST_RELAY=app.practable.io
@@ -94,7 +96,9 @@ status serve
 		viper.SetDefault("email_port", 587)
 		viper.SetDefault("email_to", "")
 
-		viper.SetDefault("healthy_duration", "10s")
+		viper.SetDefault("health_last", "10s")   // last TX should be more recent than this
+		viper.SetDefault("health_events", "100") // max number of health events logged per experiment
+		viper.SetDefault("health_startup", "1m") // don't record health history until startup period is over
 
 		viper.SetDefault("host_book", "") // "" so we can check it's been provided
 		viper.SetDefault("host_jump", "")
@@ -129,7 +133,9 @@ status serve
 		emailPort := viper.GetInt("email_port")
 		emailTo := viper.GetString("email_to")
 
-		healthyDurationStr := viper.GetString("healthy_duration")
+		healthLastStr := viper.GetString("health_last")
+		healthStartupStr := viper.GetString("health_startup")
+		healthEvents := viper.GetInt("health_events")
 
 		hostBook := viper.GetString("host_book")
 		hostJump := viper.GetString("host_jump")
@@ -208,10 +214,17 @@ status serve
 		}
 
 		// Parse durations
-		healthyDuration, err := time.ParseDuration(healthyDurationStr)
+		healthLast, err := time.ParseDuration(healthLastStr)
 
 		if err != nil {
-			fmt.Print("cannot parse duration in STATUS_HEALTHY_DURATION=" + healthyDurationStr)
+			fmt.Print("cannot parse duration in STATUS_HEALTH_LAST=" + healthLastStr)
+			os.Exit(1)
+		}
+
+		healthStartup, err := time.ParseDuration(healthStartupStr)
+
+		if err != nil {
+			fmt.Print("cannot parse duration in STATUS_HEALTH_STARTUP=" + healthStartupStr)
 			os.Exit(1)
 		}
 
@@ -274,7 +287,9 @@ status serve
 		log.Infof("Email port: [%d", emailPort)
 		log.Infof("Email to: [%s]", emailTo)
 
-		log.Infof("Healthy duration: [%s]", healthyDuration)
+		log.Infof("Health last: [%s]", healthLast)
+		log.Infof("Health startup: [%s]", healthStartup)
+		log.Infof("Health events: [%s]", healthEvents)
 
 		log.Debugf("Host  (Book): [%s]", hostBook)
 		log.Debugf("Host  (Jump): [%s]", hostJump)
@@ -335,7 +350,9 @@ status serve
 			EmailPassword:       emailPassword,
 			EmailPort:           emailPort,
 			EmailTo:             emailTo,
-			HealthyDuration:     healthyDuration,
+			HealthEvents:        healthEvents,
+			HealthLast:          healthLast,
+			HealthStartup:       healthStartup,
 			HostBook:            hostBook,
 			HostJump:            hostJump,
 			HostRelay:           hostRelay,

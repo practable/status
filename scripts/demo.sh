@@ -12,6 +12,7 @@ export STATUS_EMAIL_TO=some@a.org
 export STATUS_HOST_BOOK=app.practable.io
 #export STATUS_HOST_JUMP=dev.practable.io
 #export STATUS_HOST_RELAY=dev.practable.io
+export STATUS_HEALTH_STARTUP=5s
 export STATUS_HOST_JUMP=app.practable.io
 export STATUS_HOST_RELAY=app.practable.io
 export STATUS_LOG_LEVEL=debug
