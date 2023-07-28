@@ -255,7 +255,8 @@ func (s *Status) connectBook(ctx context.Context) {
 				r := v
 				streams := make(map[string]bool)
 				for _, stream := range r.Streams {
-					streams[stream] = true
+					fullStream := r.TopicStub + "-" + stream //this convention comes from the way manifest handle stream names
+					streams[fullStream] = true
 				}
 				ex := s.Experiments[r.TopicStub]
 				ex.StreamRequired = streams
@@ -379,7 +380,8 @@ func (s *Status) updateFromRelay(reports []rc.Report) {
 			s.Experiments[id] = NewReport()
 		}
 
-		stream, err := getStream(r.Topic)
+		stream := r.Topic
+
 		if err != nil {
 			continue
 		}

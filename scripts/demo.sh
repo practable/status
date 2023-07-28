@@ -1,6 +1,6 @@
 #!/bin/bash
 export MAIL=~/secret/zoho/mail.yaml
-export STATUS_BASEPATH_BOOK=/tenant/book
+export STATUS_BASEPATH_BOOK=/dev/book
 export STATUS_BASEPATH_JUMP=/dev/jump
 export STATUS_BASEPATH_RELAY=/dev/access
 export STATUS_EMAIL_FROM=$(yq -r '.username' $MAIL)
