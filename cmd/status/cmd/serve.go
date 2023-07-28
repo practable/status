@@ -62,6 +62,7 @@ export STATUS_EMAIL_PORT=587
 export STATUS_EMAIL_SUBJECT=app.practable.io/tenant
 export STATUS_EMAIL_TO="alpha@a.org"
 export STATUS_HEALTH_LAST=10s
+export STATUS_HEALTH_LOG_EVERY=10m
 export STATUS_HEALTH_EVENTS=100
 export STATUS_HEALTH_STARTUP=1m
 export STATUS_HOST_BOOK=app.practable.io
@@ -73,14 +74,16 @@ export STATUS_LOG_FILE=/var/log/status/status.log
 export STATUS_PORT_PROFILE=6061
 export STATUS_PORT_SERVE=3007
 export STATUS_PROFILE=false
-export STATUS_RECONNECT_JUMP_EVERY=86400
-export STATUS_RECONNECT_RELAY_EVERY=86400
+export STATUS_QUERY_BOOK_EVERY=15m
+export STATUS_RECONNECT_JUMP_EVERY=1d
+export STATUS_RECONNECT_RELAY_EVERY=1d
 export STATUS_SCHEME_BOOK=https
 export STATUS_SCHEME_JUMP=https
 export STATUS_SCHEME_RELAY=https
 export STATUS_SECRET_JUMP=othersecret
 export STATUS_SECRET_BOOK=somesecret
 export STATUS_SECRET_RELAY=somesecret
+export STATUS_TIMEOUT_BOOK=5s
 status serve 
 
 `,
@@ -102,7 +105,8 @@ status serve
 		viper.SetDefault("email_subject", "")
 		viper.SetDefault("email_to", []string{})
 
-		viper.SetDefault("health_last", "10s")   // last TX should be more recent than this
+		viper.SetDefault("health_last", "10s") // last TX should be more recent than this
+		viper.SetDefault("health_log_every", "1h")
 		viper.SetDefault("health_events", "100") // max number of health events logged per experiment
 		viper.SetDefault("health_startup", "1m") // don't record health history until startup period is over
 
@@ -118,8 +122,9 @@ status serve
 		viper.SetDefault("port_serve", 3007)
 		viper.SetDefault("profile", "false")
 
-		viper.SetDefault("reconnect_jump_every", 86400)
-		viper.SetDefault("reconnect_relay_every", 86400)
+		viper.SetDefault("query_book_every", "15m")
+		viper.SetDefault("reconnect_jump_every", "1d")
+		viper.SetDefault("reconnect_relay_every", "1d")
 
 		viper.SetDefault("scheme_book", "https")
 		viper.SetDefault("scheme_jump", "https")
@@ -128,6 +133,8 @@ status serve
 		viper.SetDefault("secret_book", "") // "" so we can check it's been provided
 		viper.SetDefault("secret_jump", "")
 		viper.SetDefault("secret_relay", "")
+
+		viper.SetDefault("timeout_book", "5s")
 
 		basepathBook := viper.GetString("basepath_book")
 		basepathJump := viper.GetString("basepath_jump")
@@ -142,6 +149,7 @@ status serve
 		emailSubject := viper.GetString("email_subject")
 		emailTo := viper.GetStringSlice("email_to")
 
+		healthLogEveryStr := viper.GetString("health_log_every")
 		healthLastStr := viper.GetString("health_last")
 		healthStartupStr := viper.GetString("health_startup")
 		healthEvents := viper.GetInt("health_events")
@@ -159,8 +167,9 @@ status serve
 
 		profile := viper.GetBool("profile")
 
-		reconnectJumpEvery := viper.GetInt("reconnect_jump_every")
-		reconnectRelayEvery := viper.GetInt("reconnect_relay_every")
+		queryBookEveryStr := viper.GetString("query_book_every")
+		reconnectJumpEveryStr := viper.GetString("reconnect_jump_every")
+		reconnectRelayEveryStr := viper.GetString("reconnect_relay_every")
 
 		secretBook := viper.GetString("secret_book")
 		secretJump := viper.GetString("secret_jump")
@@ -169,6 +178,8 @@ status serve
 		schemeBook := viper.GetString("scheme_book")
 		schemeJump := viper.GetString("scheme_jump")
 		schemeRelay := viper.GetString("scheme_relay")
+
+		timeoutBookStr := viper.GetString("timeout_book")
 
 		// Sanity checks
 		ok := true
@@ -239,10 +250,45 @@ status serve
 			os.Exit(1)
 		}
 
+		healthLogEvery, err := time.ParseDuration(healthLogEveryStr)
+
+		if err != nil {
+			fmt.Print("cannot parse duration in STATUS_HEALTH_LOG_EVERY=" + healthLogEveryStr)
+			os.Exit(1)
+		}
+
 		healthStartup, err := time.ParseDuration(healthStartupStr)
 
 		if err != nil {
 			fmt.Print("cannot parse duration in STATUS_HEALTH_STARTUP=" + healthStartupStr)
+			os.Exit(1)
+		}
+
+		queryBookEvery, err := time.ParseDuration(queryBookEveryStr)
+
+		if err != nil {
+			fmt.Print("cannot parse duration in STATUS_QUERY_BOOK_EVERY=" + queryBookEveryStr)
+			os.Exit(1)
+		}
+
+		reconnectJumpEvery, err := time.ParseDuration(reconnectJumpEveryStr)
+
+		if err != nil {
+			fmt.Print("cannot parse duration in STATUS_RECONNECT_JUMP_EVERY=" + reconnectJumpEveryStr)
+			os.Exit(1)
+		}
+
+		reconnectRelayEvery, err := time.ParseDuration(reconnectRelayEveryStr)
+
+		if err != nil {
+			fmt.Print("cannot parse duration in STATUS_RECONNECT_RELAY_EVERY=" + reconnectRelayEveryStr)
+			os.Exit(1)
+		}
+
+		timeoutBook, err := time.ParseDuration(timeoutBookStr)
+
+		if err != nil {
+			fmt.Print("cannot parse duration in STATUS_TIMEOUT_BOOK=" + timeoutBookStr)
 			os.Exit(1)
 		}
 
@@ -309,6 +355,7 @@ status serve
 		log.Infof("Email to: [%s]", emailTo)
 		log.Infof("Email CC: [%s]", emailCc)
 		log.Infof("Health last: [%s]", healthLast)
+		log.Infof("Health log every: [%s]", healthLogEvery)
 		log.Infof("Health startup: [%s]", healthStartup)
 		log.Infof("Health events: [%d]", healthEvents)
 
@@ -323,6 +370,10 @@ status serve
 		log.Infof("Port for profile: [%d]", portProfile)
 		log.Infof("Port for serve: [%d]", portServe)
 
+		log.Infof("Query book every [%s]", queryBookEvery)
+		log.Infof("Reconnect jump every [%s]", reconnectJumpEvery)
+		log.Infof("Reconnect relay every [%s]", reconnectRelayEvery)
+
 		log.Infof("Profiling is on: [%t]", profile)
 
 		log.Debugf("Scheme  (Book): [%s]", schemeBook)
@@ -332,6 +383,8 @@ status serve
 		log.Debugf("Secret  (Book): [%s...%s]", secretBook[:4], secretBook[len(secretBook)-4:])
 		log.Debugf("Secret  (Jump): [%s...%s]", secretJump[:4], secretJump[len(secretJump)-4:])
 		log.Debugf("Secret (Relay): [%s...%s]", secretRelay[:4], secretRelay[len(secretRelay)-4:])
+
+		log.Infof("Timeout book [%s]", timeoutBook)
 
 		// Optionally start the profiling server
 		if profile {
@@ -376,11 +429,13 @@ status serve
 			EmailTo:             emailTo,
 			HealthEvents:        healthEvents,
 			HealthLast:          healthLast,
+			HealthLogEvery:      healthLogEvery,
 			HealthStartup:       healthStartup,
 			HostBook:            hostBook,
 			HostJump:            hostJump,
 			HostRelay:           hostRelay,
 			Port:                portServe,
+			QueryBookEvery:      queryBookEvery,
 			ReconnectJumpEvery:  reconnectJumpEvery,
 			ReconnectRelayEvery: reconnectRelayEvery,
 			SchemeBook:          schemeBook,
@@ -390,6 +445,7 @@ status serve
 			SecretJump:          secretJump,
 			SecretRelay:         secretRelay,
 			SendEmail:           sendEmail,
+			TimeoutBook:         timeoutBook,
 		}
 
 		go status.Serve(ctx, &wg, config)

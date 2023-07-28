@@ -2,8 +2,8 @@ package status
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
-	"fmt"
 	"path"
 	"regexp"
 	"strconv"
@@ -13,6 +13,7 @@ import (
 
 	"net/smtp"
 
+	bc "github.com/practable/book/pkg/resource"
 	jc "github.com/practable/jump/pkg/status"
 	rc "github.com/practable/relay/pkg/status"
 	"github.com/practable/relay/pkg/token"
@@ -38,12 +39,14 @@ type Config struct {
 	HealthEvents        int
 	HealthLast          time.Duration
 	HealthStartup       time.Duration
+	HealthLogEvery      time.Duration
 	HostBook            string
 	HostJump            string
 	HostRelay           string
 	Port                int
-	ReconnectJumpEvery  int
-	ReconnectRelayEvery int
+	QueryBookEvery      time.Duration
+	ReconnectJumpEvery  time.Duration
+	ReconnectRelayEvery time.Duration
 	SecretBook          string
 	SecretJump          string
 	SecretRelay         string
@@ -51,6 +54,7 @@ type Config struct {
 	SchemeBook          string
 	SchemeJump          string
 	SchemeRelay         string
+	TimeoutBook         time.Duration
 }
 
 // Status represents the overall status of the experiments
@@ -75,16 +79,18 @@ type HealthEvent struct {
 
 // Report represents the status
 type Report struct {
-	FirstChecked       time.Time
-	LastCheckedJump    time.Time
-	LastCheckedStreams time.Time
-	Healthy            bool
-	HealthEvents       []HealthEvent
-	JumpOK             bool
-	JumpReport         jc.Report
-	StreamOK           map[string]bool
-	StreamReports      map[string]rc.Report
-	StreamRequired     map[string]bool
+	FirstChecked        time.Time
+	Healthy             bool
+	HealthEvents        []HealthEvent
+	JumpOK              bool
+	JumpReport          jc.Report
+	LastCheckedJump     time.Time
+	LastCheckedStreams  time.Time
+	LastFoundInManifest time.Time
+	ResourceName        string
+	StreamOK            map[string]bool
+	StreamReports       map[string]rc.Report
+	StreamRequired      map[string]bool
 }
 
 func NewReport() Report {
@@ -122,13 +128,6 @@ func Serve(ctx context.Context, wg *sync.WaitGroup, config Config) {
 
 	defer wg.Done()
 
-	// connect to stats channel
-	// update stats data structure
-	// start API server
-	// report stats when GET received
-	// extend to include jump
-	// figure out IP to make sure clients don't fool us into thinking host is present
-	// extend to check book for current availability status
 	s := New().WithConfig(config)
 	r := rc.New()
 	j := jc.New()
@@ -138,21 +137,8 @@ func Serve(ctx context.Context, wg *sync.WaitGroup, config Config) {
 
 	go s.processRelay(ctx, r)
 	go s.processJump(ctx, j)
-
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(5 * time.Second):
-				fmt.Printf("\nSTATUS\n*******\n")
-				for k, v := range s.Experiments {
-					fmt.Printf("%s:%+v\n", k, v)
-				}
-			}
-		}
-
-	}()
+	go s.logHealth(ctx) //necessary to detect the case in which jump and relay both stop
+	go s.connectBook(ctx)
 
 	<-ctx.Done()
 	log.Trace("Status done")
@@ -168,7 +154,7 @@ func connectRelay(ctx context.Context, config Config, r *rc.Status) {
 			// make token for relay stats connection for duration config.ReconnectRelayEvery
 			iat := time.Now()
 			nbf := time.Now()
-			exp := time.Now().Add(time.Second * time.Duration(config.ReconnectRelayEvery))
+			exp := time.Now().Add(config.ReconnectRelayEvery)
 			log.WithFields(log.Fields{"iat": iat, "nbf": nbf, "exp": exp}).Trace("Token times")
 			aud := config.SchemeRelay + "://" + path.Join(config.HostRelay, config.BasepathRelay)
 			bid := "status-server"
@@ -182,7 +168,7 @@ func connectRelay(ctx context.Context, config Config, r *rc.Status) {
 				time.Sleep(5 * time.Second) //rate-limit retries if there is a long standing issue
 				break
 			}
-			ctxStats, cancel := context.WithTimeout(ctx, time.Second*time.Duration(config.ReconnectRelayEvery))
+			ctxStats, cancel := context.WithTimeout(ctx, config.ReconnectRelayEvery)
 			to := aud + "/" + connectionType + "/" + topic
 			log.Tracef("to: [%s]", to)
 			r.Connect(ctxStats, to, token)
@@ -200,7 +186,7 @@ func connectJump(ctx context.Context, config Config, j *jc.Status) {
 			// make token for relay stats connection for duration config.ReconnectRelayEvery
 			iat := time.Now()
 			nbf := time.Now()
-			exp := time.Now().Add(time.Second * time.Duration(config.ReconnectJumpEvery))
+			exp := time.Now().Add(config.ReconnectJumpEvery)
 			log.WithFields(log.Fields{"iat": iat, "nbf": nbf, "exp": exp}).Trace("Token times")
 			aud := config.SchemeJump + "://" + path.Join(config.HostJump, config.BasepathJump)
 			bid := "status-server"
@@ -214,13 +200,95 @@ func connectJump(ctx context.Context, config Config, j *jc.Status) {
 				time.Sleep(5 * time.Second) //rate-limit retries if there is a long standing issue
 				break
 			}
-			ctxStats, cancel := context.WithTimeout(ctx, time.Second*time.Duration(config.ReconnectJumpEvery))
+			ctxStats, cancel := context.WithTimeout(ctx, config.ReconnectJumpEvery)
 			to := aud + "/api/v1/" + connectionType + "/" + topic
 			log.Tracef("to: [%s]", to)
 			j.Connect(ctxStats, to, token)
 			cancel() // call to save leaking, even though cancelled before getting to here
 		}
 	}
+}
+
+func (s *Status) connectBook(ctx context.Context) {
+
+	// basepath has slightly different interpretations between our config
+	// and how it is used in bc.Config. TODO check this works.
+	c := bc.Config{
+		BasePath: "/api/v1",
+		Host:     s.Config.HostBook + s.Config.BasepathBook,
+		Scheme:   s.Config.SchemeBook,
+		Timeout:  time.Duration(5 * time.Second),
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(s.Config.QueryBookEvery):
+			// make token with updated times
+			audience := s.Config.SchemeBook + "://" + s.Config.HostBook + s.Config.BasepathBook
+			subject := "status-server"
+			secret := s.Config.SecretBook
+			scopes := []string{"booking:admin"}
+
+			iat := time.Now()
+			nbf := time.Now().Add(-1 * time.Second)
+			exp := time.Now().Add(s.Config.QueryBookEvery)
+
+			tk, err := bc.NewToken(audience, subject, secret, scopes, iat, nbf, exp)
+
+			c.Token = tk
+
+			if err != nil {
+				log.Errorf("connectBook error making token was %s", err.Error())
+				continue
+			}
+
+			resources, err := c.GetResources()
+
+			if err != nil {
+				log.Errorf("connectBook error getting resources was %s", err.Error())
+				continue
+			}
+
+			for _, v := range resources {
+				r := v
+				streams := make(map[string]bool)
+				for _, stream := range r.Streams {
+					streams[stream] = true
+				}
+				ex := s.Experiments[r.TopicStub]
+				ex.StreamRequired = streams
+				ex.ResourceName = r.Name
+				ex.LastFoundInManifest = time.Now()
+				s.Experiments[r.TopicStub] = ex
+			}
+
+			s.updateHealth() //force an update in case connections to relay and jump are down
+		}
+
+	}
+}
+
+func (s *Status) logHealth(ctx context.Context) {
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(s.Config.HealthLogEvery):
+			s.updateHealth() //force an update in case connections to relay and jump are down
+			status, err := json.Marshal(s.Experiments)
+			if err != nil {
+				log.Errorf("HealthLogEvery marshal error %s", err.Error())
+				continue
+			}
+			log.WithField("status", string(status)).Infof("Current Health")
+
+		}
+
+	}
+
 }
 
 func (s *Status) processRelay(ctx context.Context, r *rc.Status) {
@@ -234,7 +302,7 @@ func (s *Status) processRelay(ctx context.Context, r *rc.Status) {
 				log.Error("relay status channel not ok, stopping processing status")
 				return
 			}
-
+			log.Infof("Relay status update received of size %d", len(reports))
 			s.updateFromRelay(reports)
 
 		}
@@ -285,7 +353,7 @@ func (s *Status) updateFromJump(reports []jc.Report) {
 		s.Experiments[r.Topic] = expt
 	}
 
-	s.UpdateHealth()
+	s.updateHealth()
 
 }
 
@@ -336,7 +404,7 @@ func (s *Status) updateFromRelay(reports []rc.Report) {
 
 	}
 
-	s.UpdateHealth()
+	s.updateHealth()
 }
 
 func getID(str string) (string, error) {
@@ -362,7 +430,7 @@ func getStream(str string) (string, error) {
 
 }
 
-func (s *Status) UpdateHealth() {
+func (s *Status) updateHealth() {
 
 	alerts := make(map[string]bool)
 
