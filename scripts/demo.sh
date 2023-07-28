@@ -1,14 +1,18 @@
 #!/bin/bash
+export MAIL=~/secret/zoho/mail.yaml
 export STATUS_BASEPATH_BOOK=/tenant/book
 #export STATUS_BASEPATH_JUMP=/jump
 #export STATUS_BASEPATH_RELAY=/access
 export STATUS_BASEPATH_JUMP=/dev/jump
 export STATUS_BASEPATH_RELAY=/dev/access
-export STATUS_EMAIL_FROM=other@b.org
-export STATUS_EMAIL_HOST=stmp.b.org
-export STATUS_EMAIL_PASSWORD=something
-export STATUS_EMAIL_PORT=587
-export STATUS_EMAIL_TO=some@a.org
+export STATUS_EMAIL_FROM=$(yq -r '.username' $MAIL)
+export STATUS_EMAIL_HOST=$(yq -r '.host' $MAIL)
+export STATUS_EMAIL_LINK=https://app.practable.io/dev/status
+export STATUS_EMAIL_PASSWORD=$(yq -r '.password' $MAIL)
+export STATUS_EMAIL_PORT=(yq r '.port' $MAIL)
+export STATUS_EMAIL_SUBJECT=app.practable.io/dev
+# while our send to addresses are not secret, this step avoids receiving spam
+export STATUS_EMAIL_TO=$(yq -r '.to' $MAIL)
 export STATUS_HOST_BOOK=app.practable.io
 #export STATUS_HOST_JUMP=dev.practable.io
 #export STATUS_HOST_RELAY=dev.practable.io

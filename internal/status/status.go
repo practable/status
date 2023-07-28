@@ -6,8 +6,12 @@ import (
 	"fmt"
 	"path"
 	"regexp"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
+
+	"net/smtp"
 
 	jc "github.com/practable/jump/pkg/status"
 	rc "github.com/practable/relay/pkg/status"
@@ -25,9 +29,12 @@ type Config struct {
 	BasepathRelay       string
 	EmailFrom           string
 	EmailHost           string
+	EmailLink           string
 	EmailPassword       string
 	EmailPort           int
-	EmailTo             string
+	EmailTo             []string
+	EmailCc             []string
+	EmailSubject        string
 	HealthEvents        int
 	HealthLast          time.Duration
 	HealthStartup       time.Duration
@@ -357,6 +364,8 @@ func getStream(str string) (string, error) {
 
 func (s *Status) UpdateHealth() {
 
+	alerts := make(map[string]bool)
+
 	hm := make(map[string]HealthyIssues)
 
 	now := time.Now()
@@ -438,6 +447,8 @@ func (s *Status) UpdateHealth() {
 			if len(r.HealthEvents) > s.Config.HealthEvents {
 				r.HealthEvents = r.HealthEvents[len(r.HealthEvents)-s.Config.HealthEvents:]
 			}
+
+			alerts[k] = v.Healthy
 		}
 
 		r.Healthy = v.Healthy
@@ -445,5 +456,53 @@ func (s *Status) UpdateHealth() {
 		expt[k] = r
 	}
 	s.Experiments = expt
+
+	// skip email if no alerts
+	if len(alerts) == 0 {
+		log.Trace("No email needed")
+		return
+	}
+
+	count := strconv.Itoa(len(alerts))
+
+	auth := smtp.PlainAuth("", s.Config.EmailFrom, s.Config.EmailPassword, s.Config.EmailHost)
+
+	toHeader := strings.Join(s.Config.EmailTo, ",")
+	ccHeader := strings.Join(s.Config.EmailCc, ",")
+	receivers := append(s.Config.EmailTo, s.Config.EmailCc...)
+	// The msg parameter should be an RFC 822-style email with headers first, a blank line, and then the message body. The lines of msg should be CRLF terminated. The msg headers should usually include fields such as "From", "To", "Subject", and "Cc".
+
+	msg := "To: " + toHeader + "\r\n" +
+		"Cc: " + ccHeader + "\r\n" +
+		"Subject: " + s.Config.EmailSubject + " " + count + " new health events \r\n" +
+		"\r\n" +
+		"There are " + count + " new health events: \r\n"
+
+	for k, v := range alerts {
+		if v {
+			msg += k + " OK\r\n"
+		} else {
+			he := s.Experiments[k].HealthEvents
+			issues := "[unknown]"
+			if len(he) > 0 {
+				issues = "[" + strings.Join(he[len(he)-1].Issues, ",") + "]"
+			}
+			msg += k + " ** issue ** " + issues + "\r\n"
+		}
+
+	}
+
+	msg += "\r\n\r\n For the latest complete status information, please go to " + s.Config.EmailLink + "\r\n"
+
+	log.Errorf(msg)
+	// EmailTo must be []string
+	hostPort := s.Config.EmailHost + ":" + strconv.Itoa(s.Config.EmailPort)
+	err := smtp.SendMail(hostPort, auth, s.Config.EmailFrom, receivers, []byte(msg))
+
+	if err != nil {
+
+		log.Error(err)
+
+	}
 
 }

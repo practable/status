@@ -53,11 +53,14 @@ variables, for example:
 export STATUS_BASEPATH_BOOK=/tenant/book
 export STATUS_BASEPATH_JUMP=/tenant/jump
 export STATUS_BASEPATH_RELAY=/tenant/relay
+export STATUS_EMAIL_CC="beta@a.org"
 export STATUS_EMAIL_FROM=other@b.org
 export STATUS_EMAIL_HOST=stmp.b.org
+export STATUS_EMAIL_LINK=app.practable.io/tenant/status
 export STATUS_EMAIL_PASSWORD=something
 export STATUS_EMAIL_PORT=587
-export STATUS_EMAIL_TO=some@a.org
+export STATUS_EMAIL_SUBJECT=app.practable.io/tenant
+export STATUS_EMAIL_TO="alpha@a.org"
 export STATUS_HEALTH_LAST=10s
 export STATUS_HEALTH_EVENTS=100
 export STATUS_HEALTH_STARTUP=1m
@@ -90,11 +93,14 @@ status serve
 		viper.SetDefault("basepath_jump", "/")
 		viper.SetDefault("basepath_relay", "/")
 
+		viper.SetDefault("email_cc", []string{})
 		viper.SetDefault("email_from", "") // "" so we can check it's been provided
 		viper.SetDefault("email_host", "")
+		viper.SetDefault("email_link", "")
 		viper.SetDefault("email_password", "")
 		viper.SetDefault("email_port", 587)
-		viper.SetDefault("email_to", "")
+		viper.SetDefault("email_subject", "")
+		viper.SetDefault("email_to", []string{})
 
 		viper.SetDefault("health_last", "10s")   // last TX should be more recent than this
 		viper.SetDefault("health_events", "100") // max number of health events logged per experiment
@@ -127,11 +133,14 @@ status serve
 		basepathJump := viper.GetString("basepath_jump")
 		basepathRelay := viper.GetString("basepath_relay")
 
+		emailCc := viper.GetStringSlice("email_cc")
 		emailFrom := viper.GetString("email_from")
 		emailHost := viper.GetString("email_host")
+		emailLink := viper.GetString("email_link")
 		emailPassword := viper.GetString("email_password")
 		emailPort := viper.GetInt("email_port")
-		emailTo := viper.GetString("email_to")
+		emailSubject := viper.GetString("email_subject")
+		emailTo := viper.GetStringSlice("email_to")
 
 		healthLastStr := viper.GetString("health_last")
 		healthStartupStr := viper.GetString("health_startup")
@@ -204,11 +213,20 @@ status serve
 			fmt.Println("To send email, you must set STATUS_EMAIL_HOST. No emails will be sent.")
 			sendEmail = false
 		}
+		if emailLink == "" {
+			fmt.Println("To send email, you must set STATUS_EMAIL_LINK. No emails will be sent.")
+			sendEmail = false
+		}
+
 		if emailPassword == "" {
 			fmt.Println("To send email, you must set STATUS_EMAIL_PASSWORD. No emails will be sent.")
 			sendEmail = false
 		}
-		if emailTo == "" {
+		if emailSubject == "" {
+			fmt.Println("To send email, you must set STATUS_EMAIL_SUBJECT. No emails will be sent.")
+			sendEmail = false
+		}
+		if len(emailTo) == 0 {
 			fmt.Println("To send email, you must set STATUS_EMAIL_TO. No emails will be sent.")
 			sendEmail = false
 		}
@@ -283,13 +301,16 @@ status serve
 		log.Infof("Send email? [%t]", sendEmail)
 		log.Infof("Email from: [%s]", emailFrom)
 		log.Infof("Email host: [%s]", emailHost)
+		log.Infof("Email link: [%s]", emailLink)
 		log.Infof("Email password: [%s...%s]", emailPassword[:4], emailPassword[len(emailPassword)-4:])
-		log.Infof("Email port: [%d", emailPort)
-		log.Infof("Email to: [%s]", emailTo)
 
+		log.Infof("Email port: [%d", emailPort)
+		log.Infof("Email subject: [%s]", emailSubject)
+		log.Infof("Email to: [%s]", emailTo)
+		log.Infof("Email CC: [%s]", emailCc)
 		log.Infof("Health last: [%s]", healthLast)
 		log.Infof("Health startup: [%s]", healthStartup)
-		log.Infof("Health events: [%s]", healthEvents)
+		log.Infof("Health events: [%d]", healthEvents)
 
 		log.Debugf("Host  (Book): [%s]", hostBook)
 		log.Debugf("Host  (Jump): [%s]", hostJump)
@@ -345,10 +366,13 @@ status serve
 			BasepathBook:        basepathBook,
 			BasepathJump:        basepathJump,
 			BasepathRelay:       basepathRelay,
+			EmailCc:             emailCc,
 			EmailFrom:           emailFrom,
 			EmailHost:           emailHost,
+			EmailLink:           emailLink,
 			EmailPassword:       emailPassword,
 			EmailPort:           emailPort,
+			EmailSubject:        emailSubject,
 			EmailTo:             emailTo,
 			HealthEvents:        healthEvents,
 			HealthLast:          healthLast,
