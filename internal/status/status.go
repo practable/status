@@ -492,6 +492,19 @@ func (s *Status) UpdateHealth() {
 
 	}
 
+	msg += "\r\n\r\n All new and existing health issues:\r\n"
+
+	for k, v := range s.Experiments {
+		if !v.Healthy {
+			he := v.HealthEvents
+			issues := "[unknown]"
+			if len(he) > 0 {
+				issues = "[" + strings.Join(he[len(he)-1].Issues, ",") + "]"
+			}
+			msg += k + " ** issue ** " + issues + "\r\n"
+		}
+	}
+
 	msg += "\r\n\r\n For the latest complete status information, please go to " + s.Config.EmailLink + "\r\n"
 
 	log.Errorf(msg)
