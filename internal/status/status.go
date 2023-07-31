@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"net/smtp"
@@ -17,6 +16,7 @@ import (
 	jc "github.com/practable/jump/pkg/status"
 	rc "github.com/practable/relay/pkg/status"
 	"github.com/practable/relay/pkg/token"
+	"github.com/practable/status/internal/config"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
 )
@@ -24,81 +24,12 @@ import (
 //ro "github.com/practable/status/internal/relay/operations"
 //rm "github.com/practable/status/internal/relay/models"
 
-type Config struct {
-	BasepathBook        string
-	BasepathJump        string
-	BasepathRelay       string
-	EmailFrom           string
-	EmailHost           string
-	EmailLink           string
-	EmailPassword       string
-	EmailPort           int
-	EmailTo             []string
-	EmailCc             []string
-	EmailSubject        string
-	HealthEvents        int
-	HealthLast          time.Duration
-	HealthStartup       time.Duration
-	HealthLogEvery      time.Duration
-	HostBook            string
-	HostJump            string
-	HostRelay           string
-	Port                int
-	QueryBookEvery      time.Duration
-	ReconnectJumpEvery  time.Duration
-	ReconnectRelayEvery time.Duration
-	SecretBook          string
-	SecretJump          string
-	SecretRelay         string
-	SendEmail           bool
-	SchemeBook          string
-	SchemeJump          string
-	SchemeRelay         string
-	TimeoutBook         time.Duration
-}
+func NewReport() config.Report {
 
-// Status represents the overall status of the experiments
-type Status struct {
-	*sync.RWMutex
-	Config      Config
-	Experiments map[string]Report
-}
-
-type HealthyIssues struct {
-	Healthy bool
-	Issues  []string
-}
-
-type HealthEvent struct {
-	Healthy  bool
-	When     time.Time
-	JumpOK   bool
-	StreamOK map[string]bool
-	Issues   []string
-}
-
-// Report represents the status
-type Report struct {
-	FirstChecked        time.Time
-	Healthy             bool
-	HealthEvents        []HealthEvent
-	JumpOK              bool
-	JumpReport          jc.Report
-	LastCheckedJump     time.Time
-	LastCheckedStreams  time.Time
-	LastFoundInManifest time.Time
-	ResourceName        string
-	StreamOK            map[string]bool
-	StreamReports       map[string]rc.Report
-	StreamRequired      map[string]bool
-}
-
-func NewReport() Report {
-
-	return Report{
+	return config.Report{
 		FirstChecked:   time.Now(),
 		Healthy:        false,
-		HealthEvents:   []HealthEvent{},
+		HealthEvents:   []config.HealthEvent{},
 		JumpOK:         false,
 		JumpReport:     jc.Report{},
 		StreamOK:       make(map[string]bool),
@@ -108,44 +39,26 @@ func NewReport() Report {
 
 }
 
-// New returns an Status with initialised maps
-func New() *Status {
-	return &Status{
-		&sync.RWMutex{},
-		Config{},
-		make(map[string]Report),
-	}
-
-}
-
-func (s *Status) WithConfig(config Config) *Status {
-	s.Config = config
-	return s
-}
-
 // just pass in a context?
-func Serve(ctx context.Context, wg *sync.WaitGroup, config Config) {
+func Serve(ctx context.Context, s *config.Status) {
 
-	defer wg.Done()
-
-	s := New().WithConfig(config)
 	r := rc.New()
 	j := jc.New()
 
-	go connectRelay(ctx, config, r)
-	go connectJump(ctx, config, j)
+	go connectRelay(ctx, s, r)
+	go connectJump(ctx, s, j)
 
-	go s.processRelay(ctx, r)
-	go s.processJump(ctx, j)
-	go s.logHealth(ctx) //necessary to detect the case in which jump and relay both stop
-	go s.connectBook(ctx)
+	go processRelay(ctx, s, r)
+	go processJump(ctx, s, j)
+	go logHealth(ctx, s) //necessary to detect the case in which jump and relay both stop
+	go connectBook(ctx, s)
 
 	<-ctx.Done()
 	log.Trace("Status done")
 
 }
 
-func connectRelay(ctx context.Context, config Config, r *rc.Status) {
+func connectRelay(ctx context.Context, s *config.Status, r *rc.Status) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -154,21 +67,21 @@ func connectRelay(ctx context.Context, config Config, r *rc.Status) {
 			// make token for relay stats connection for duration config.ReconnectRelayEvery
 			iat := time.Now()
 			nbf := time.Now()
-			exp := time.Now().Add(config.ReconnectRelayEvery)
+			exp := time.Now().Add(s.Config.ReconnectRelayEvery)
 			log.WithFields(log.Fields{"iat": iat, "nbf": nbf, "exp": exp}).Trace("Token times")
-			aud := config.SchemeRelay + "://" + path.Join(config.HostRelay, config.BasepathRelay)
+			aud := s.Config.SchemeRelay + "://" + path.Join(s.Config.HostRelay, s.Config.BasepathRelay)
 			bid := "status-server"
 			connectionType := "session"
 			scopes := []string{"read"}
 			topic := "stats"
-			token, err := token.New(iat, nbf, exp, scopes, aud, bid, connectionType, config.SecretRelay, topic)
+			token, err := token.New(iat, nbf, exp, scopes, aud, bid, connectionType, s.Config.SecretRelay, topic)
 			log.Tracef("token: [%s]", token)
 			if err != nil {
 				log.WithField("error", err.Error()).Error("Relay stats token generation failed")
 				time.Sleep(5 * time.Second) //rate-limit retries if there is a long standing issue
 				break
 			}
-			ctxStats, cancel := context.WithTimeout(ctx, config.ReconnectRelayEvery)
+			ctxStats, cancel := context.WithTimeout(ctx, s.Config.ReconnectRelayEvery)
 			to := aud + "/" + connectionType + "/" + topic
 			log.Tracef("to: [%s]", to)
 			r.Connect(ctxStats, to, token)
@@ -177,7 +90,7 @@ func connectRelay(ctx context.Context, config Config, r *rc.Status) {
 	}
 }
 
-func connectJump(ctx context.Context, config Config, j *jc.Status) {
+func connectJump(ctx context.Context, s *config.Status, j *jc.Status) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -186,21 +99,21 @@ func connectJump(ctx context.Context, config Config, j *jc.Status) {
 			// make token for relay stats connection for duration config.ReconnectRelayEvery
 			iat := time.Now()
 			nbf := time.Now()
-			exp := time.Now().Add(config.ReconnectJumpEvery)
+			exp := time.Now().Add(s.Config.ReconnectJumpEvery)
 			log.WithFields(log.Fields{"iat": iat, "nbf": nbf, "exp": exp}).Trace("Token times")
-			aud := config.SchemeJump + "://" + path.Join(config.HostJump, config.BasepathJump)
+			aud := s.Config.SchemeJump + "://" + path.Join(s.Config.HostJump, s.Config.BasepathJump)
 			bid := "status-server"
 			connectionType := "connect"
 			scopes := []string{"stats"}
 			topic := "stats"
-			token, err := token.New(iat, nbf, exp, scopes, aud, bid, connectionType, config.SecretJump, topic)
+			token, err := token.New(iat, nbf, exp, scopes, aud, bid, connectionType, s.Config.SecretJump, topic)
 			log.Tracef("token: [%s]", token)
 			if err != nil {
 				log.WithField("error", err.Error()).Error("Jump stats token generation failed")
 				time.Sleep(5 * time.Second) //rate-limit retries if there is a long standing issue
 				break
 			}
-			ctxStats, cancel := context.WithTimeout(ctx, config.ReconnectJumpEvery)
+			ctxStats, cancel := context.WithTimeout(ctx, s.Config.ReconnectJumpEvery)
 			to := aud + "/api/v1/" + connectionType + "/" + topic
 			log.Tracef("to: [%s]", to)
 			j.Connect(ctxStats, to, token)
@@ -209,7 +122,7 @@ func connectJump(ctx context.Context, config Config, j *jc.Status) {
 	}
 }
 
-func (s *Status) connectBook(ctx context.Context) {
+func connectBook(ctx context.Context, s *config.Status) {
 
 	// basepath has slightly different interpretations between our config
 	// and how it is used in bc.Config. TODO check this works.
@@ -265,20 +178,20 @@ func (s *Status) connectBook(ctx context.Context) {
 				s.Experiments[r.TopicStub] = ex
 			}
 
-			s.updateHealth() //force an update in case connections to relay and jump are down
+			updateHealth(s) //force an update in case connections to relay and jump are down
 		}
 
 	}
 }
 
-func (s *Status) logHealth(ctx context.Context) {
+func logHealth(ctx context.Context, s *config.Status) {
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-time.After(s.Config.HealthLogEvery):
-			s.updateHealth() //force an update in case connections to relay and jump are down
+			updateHealth(s) //force an update in case connections to relay and jump are down
 			status, err := json.Marshal(s.Experiments)
 			if err != nil {
 				log.Errorf("HealthLogEvery marshal error %s", err.Error())
@@ -292,7 +205,7 @@ func (s *Status) logHealth(ctx context.Context) {
 
 }
 
-func (s *Status) processRelay(ctx context.Context, r *rc.Status) {
+func processRelay(ctx context.Context, s *config.Status, r *rc.Status) {
 
 	for {
 		select {
@@ -304,13 +217,13 @@ func (s *Status) processRelay(ctx context.Context, r *rc.Status) {
 				return
 			}
 			log.Infof("Relay status update received of size %d", len(reports))
-			s.updateFromRelay(reports)
+			updateFromRelay(s, reports)
 
 		}
 	}
 }
 
-func (s *Status) processJump(ctx context.Context, j *jc.Status) {
+func processJump(ctx context.Context, s *config.Status, j *jc.Status) {
 
 	for {
 		select {
@@ -322,7 +235,7 @@ func (s *Status) processJump(ctx context.Context, j *jc.Status) {
 				return
 			}
 
-			s.updateFromJump(reports)
+			updateFromJump(s, reports)
 
 		}
 
@@ -330,7 +243,7 @@ func (s *Status) processJump(ctx context.Context, j *jc.Status) {
 
 }
 
-func (s *Status) updateFromJump(reports []jc.Report) {
+func updateFromJump(s *config.Status, reports []jc.Report) {
 	s.Lock()
 	defer s.Unlock()
 	now := time.Now()
@@ -354,11 +267,11 @@ func (s *Status) updateFromJump(reports []jc.Report) {
 		s.Experiments[r.Topic] = expt
 	}
 
-	s.updateHealth()
+	updateHealth(s)
 
 }
 
-func (s *Status) updateFromRelay(reports []rc.Report) {
+func updateFromRelay(s *config.Status, reports []rc.Report) {
 	s.Lock()
 	defer s.Unlock()
 
@@ -406,7 +319,7 @@ func (s *Status) updateFromRelay(reports []rc.Report) {
 
 	}
 
-	s.updateHealth()
+	updateHealth(s)
 }
 
 func getID(str string) (string, error) {
@@ -432,11 +345,11 @@ func getStream(str string) (string, error) {
 
 }
 
-func (s *Status) updateHealth() {
+func updateHealth(s *config.Status) {
 
 	alerts := make(map[string]bool)
 
-	hm := make(map[string]HealthyIssues)
+	hm := make(map[string]config.HealthyIssues)
 
 	now := time.Now()
 
@@ -479,7 +392,7 @@ func (s *Status) updateHealth() {
 			}
 		}
 
-		hm[k] = HealthyIssues{
+		hm[k] = config.HealthyIssues{
 			Healthy: h,
 			Issues:  issues,
 		}
@@ -504,7 +417,7 @@ func (s *Status) updateHealth() {
 
 		// add event if health has changed, or if no event previously registered
 		if r.Healthy != v.Healthy || len(r.HealthEvents) == 0 {
-			he := HealthEvent{
+			he := config.HealthEvent{
 				Healthy:  v.Healthy,
 				When:     now,
 				JumpOK:   r.JumpOK,
