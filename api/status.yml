@@ -62,28 +62,47 @@ definitions:
     title: Status of an experiment
     type: object
     properties:
-      name:
-        description: name of the experiment
-        example: spin30
+      first_checked:
         type: string
-      address:
-        description: the ip address
-        type: string
-      book:
-          $ref: '#/definitions/BookStatus'
-      relay:
+      healthy:
+        type: bool
+      health_events:
         type: array
         items:
-          $ref: '#/definitions/StreamStatus'
-      jump:  
-        $ref: '#/definitions/JumpStatus'
-      test:
-        $ref: '#/definitions/TestStatus'
+          $ref: '#/definitions/HealthEvent'
+      jump_ok:
+        type: bool
+      jump_report:
+        $ref: '#/definitions/JumpReport'
+      last_checked_jump:
+        type: string
+      last_checked_streams:
+        type: string
+      last_found_in_manifest:
+        type: string
+      resource_name:
+        description: name of the resouce in the manifest
+        example: r-spin30
+        type: string
+      stream_ok:
+        type: bool
+      stream_reports:
+        type: object
+        additionalProperties:
+          $ref: '#/definitions/StreamReport'
+      stream_required:
+        type: array
+        items:
+          type: string
+      topic_name: 
+        description: topic stub in stream names
+        example: spin30
+        type: string
     required:
-      - address
-      - jump
-      - name
-      - relay
+      - healthy
+      - jump_ok
+      - stream_ok
+      
 
   ExperimentStatuses:
     title: List of experiment statuses
@@ -102,11 +121,11 @@ definitions:
         description: why experiment is/isn't available
         type: string
         
-  JumpStatus:
+  JumpReport:
     title: Status of the jump connection for an experiment
     type: object
     properties:
-      clients:
+      client_count:
         description: number of clients connected (0 if just the experiment)
         type: number
         format: integer
