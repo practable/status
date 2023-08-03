@@ -10,6 +10,7 @@ require (
 	github.com/go-openapi/strfmt v0.21.7
 	github.com/go-openapi/swag v0.22.4
 	github.com/go-openapi/validate v0.22.1
+	github.com/icza/gog v0.0.0-20220909135443-35d926f98ec3
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/practable/book v0.3.11
 	github.com/practable/jump v0.3.3-0.20230727224731-266ee2a11518
