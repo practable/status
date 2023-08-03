@@ -19,75 +19,71 @@ import (
 // swagger:model StreamReport
 type StreamReport struct {
 
-	// is the experiment currently actively sending?
-	// Required: true
-	Active *bool `json:"active"`
+	// can read
+	CanRead bool `json:"can_read,omitempty"`
 
-	// number of clients connected (0 if just the experiment)
-	// Required: true
-	Clients *int64 `json:"clients"`
+	// can write
+	CanWrite bool `json:"can_write,omitempty"`
 
-	// is the experiment currently connected to relay?
+	// date and time connection made
 	// Required: true
-	Connected *bool `json:"connected"`
+	Connected *string `json:"connected"`
 
-	// duration since last send by experiment
+	// expiry date and time in the token used to authenticate the connection
 	// Required: true
-	Last *string `json:"last"`
+	ExpiresAt *string `json:"expires_at"`
 
-	// name of the stream, eg. video, data
+	// list of IP addresses for client (typically <client>, <proxy 1>, etc)
+	RemoteAddr string `json:"remote_addr,omitempty"`
+
+	// list of scopes supplied in token used to authenticate the connection
 	// Required: true
-	Name *string `json:"name"`
+	Scopes []string `json:"scopes"`
 
-	// does the experiment require this stream?
-	Required bool `json:"required,omitempty"`
+	// stats
+	// Required: true
+	Stats *RxTx `json:"stats"`
+
+	// topic_stub for experiment e.g. pend00
+	// Required: true
+	Topic *string `json:"topic"`
+
+	// what tool is user using to connect
+	// Required: true
+	UserAgent *string `json:"user_agent"`
 }
 
 // Validate validates this stream report
 func (m *StreamReport) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateActive(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateClients(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateConnected(formats); err != nil {
 		res = append(res, err)
 	}
 
-	if err := m.validateLast(formats); err != nil {
+	if err := m.validateExpiresAt(formats); err != nil {
 		res = append(res, err)
 	}
 
-	if err := m.validateName(formats); err != nil {
+	if err := m.validateScopes(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStats(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateTopic(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateUserAgent(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *StreamReport) validateActive(formats strfmt.Registry) error {
-
-	if err := validate.Required("active", "body", m.Active); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *StreamReport) validateClients(formats strfmt.Registry) error {
-
-	if err := validate.Required("clients", "body", m.Clients); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -100,26 +96,89 @@ func (m *StreamReport) validateConnected(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *StreamReport) validateLast(formats strfmt.Registry) error {
+func (m *StreamReport) validateExpiresAt(formats strfmt.Registry) error {
 
-	if err := validate.Required("last", "body", m.Last); err != nil {
+	if err := validate.Required("expires_at", "body", m.ExpiresAt); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (m *StreamReport) validateName(formats strfmt.Registry) error {
+func (m *StreamReport) validateScopes(formats strfmt.Registry) error {
 
-	if err := validate.Required("name", "body", m.Name); err != nil {
+	if err := validate.Required("scopes", "body", m.Scopes); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// ContextValidate validates this stream report based on context it is used
+func (m *StreamReport) validateStats(formats strfmt.Registry) error {
+
+	if err := validate.Required("stats", "body", m.Stats); err != nil {
+		return err
+	}
+
+	if m.Stats != nil {
+		if err := m.Stats.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("stats")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("stats")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *StreamReport) validateTopic(formats strfmt.Registry) error {
+
+	if err := validate.Required("topic", "body", m.Topic); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *StreamReport) validateUserAgent(formats strfmt.Registry) error {
+
+	if err := validate.Required("user_agent", "body", m.UserAgent); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this stream report based on the context it is used
 func (m *StreamReport) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateStats(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *StreamReport) contextValidateStats(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Stats != nil {
+		if err := m.Stats.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("stats")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("stats")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 

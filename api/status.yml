@@ -251,31 +251,39 @@ definitions:
     title: Status of a stream
     type: object
     properties:
-      name:
-        description: name of the stream, eg. video, data
-        type: string
-      active:
-        description: is the experiment currently actively sending?
+      can_read:
         type: boolean
-      clients:
-        description: number of clients connected (0 if just the experiment)
-        type: number
-        format: integer
+      can_write:
+        type: boolean
       connected:
-        description: is the experiment currently connected to relay?
-        type: boolean
-      last:
-        description: duration since last send by experiment
+        description: date and time connection made
         type: string
-      required:
-        description: does the experiment require this stream?
-        type: boolean
+      expires_at:
+        description: expiry date and time in the token used to authenticate the connection
+        type: string
+      remote_addr:
+        description: list of IP addresses for client (typically <client>, <proxy 1>, etc)
+        type: string
+      scopes:
+        type: array
+        description: list of scopes supplied in token used to authenticate the connection
+        items:
+          type: string
+      stats:
+        $ref: '#/definitions/RxTx'
+      topic:
+        description: topic_stub for experiment e.g. pend00
+        type: string        
+      user_agent:
+        description: what tool is user using to connect
+        type: string
     required:
-    - name
-    - active
-    - clients
     - connected
-    - last
+    - expires_at
+    - scopes
+    - stats
+    - topic
+    - user_agent
     
 responses:
   NotFound:

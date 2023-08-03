@@ -60,15 +60,15 @@ type ExperimentReport struct {
 
 	// stream ok
 	// Required: true
-	StreamOk *bool `json:"stream_ok"`
+	StreamOk map[string]bool `json:"stream_ok"`
 
 	// stream reports
 	// Required: true
 	StreamReports map[string]StreamReport `json:"stream_reports"`
 
-	// stream required
+	// defaults to true for required stream, false currently undefined, but kept as a map for consistenct with stream_reports and stream_ok
 	// Required: true
-	StreamRequired []string `json:"stream_required"`
+	StreamRequired map[string]bool `json:"stream_required"`
 
 	// topic stub in stream names
 	// Example: spin30

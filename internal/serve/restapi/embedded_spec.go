@@ -174,7 +174,10 @@ func init() {
           "example": "r-spin30"
         },
         "stream_ok": {
-          "type": "boolean"
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          }
         },
         "stream_reports": {
           "type": "object",
@@ -183,9 +186,10 @@ func init() {
           }
         },
         "stream_required": {
-          "type": "array",
-          "items": {
-            "type": "string"
+          "description": "defaults to true for required stream, false currently undefined, but kept as a map for consistenct with stream_reports and stream_ok",
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
           }
         },
         "topic_name": {
@@ -331,37 +335,49 @@ func init() {
       "type": "object",
       "title": "Status of a stream",
       "required": [
-        "name",
-        "active",
-        "clients",
         "connected",
-        "last"
+        "expires_at",
+        "scopes",
+        "stats",
+        "topic",
+        "user_agent"
       ],
       "properties": {
-        "active": {
-          "description": "is the experiment currently actively sending?",
+        "can_read": {
           "type": "boolean"
         },
-        "clients": {
-          "description": "number of clients connected (0 if just the experiment)",
-          "type": "number",
-          "format": "integer"
+        "can_write": {
+          "type": "boolean"
         },
         "connected": {
-          "description": "is the experiment currently connected to relay?",
-          "type": "boolean"
-        },
-        "last": {
-          "description": "duration since last send by experiment",
+          "description": "date and time connection made",
           "type": "string"
         },
-        "name": {
-          "description": "name of the stream, eg. video, data",
+        "expires_at": {
+          "description": "expiry date and time in the token used to authenticate the connection",
           "type": "string"
         },
-        "required": {
-          "description": "does the experiment require this stream?",
-          "type": "boolean"
+        "remote_addr": {
+          "description": "list of IP addresses for client (typically \u003cclient\u003e, \u003cproxy 1\u003e, etc)",
+          "type": "string"
+        },
+        "scopes": {
+          "description": "list of scopes supplied in token used to authenticate the connection",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stats": {
+          "$ref": "#/definitions/RxTx"
+        },
+        "topic": {
+          "description": "topic_stub for experiment e.g. pend00",
+          "type": "string"
+        },
+        "user_agent": {
+          "description": "what tool is user using to connect",
+          "type": "string"
         }
       }
     }
@@ -569,7 +585,10 @@ func init() {
           "example": "r-spin30"
         },
         "stream_ok": {
-          "type": "boolean"
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          }
         },
         "stream_reports": {
           "type": "object",
@@ -578,9 +597,10 @@ func init() {
           }
         },
         "stream_required": {
-          "type": "array",
-          "items": {
-            "type": "string"
+          "description": "defaults to true for required stream, false currently undefined, but kept as a map for consistenct with stream_reports and stream_ok",
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
           }
         },
         "topic_name": {
@@ -726,37 +746,49 @@ func init() {
       "type": "object",
       "title": "Status of a stream",
       "required": [
-        "name",
-        "active",
-        "clients",
         "connected",
-        "last"
+        "expires_at",
+        "scopes",
+        "stats",
+        "topic",
+        "user_agent"
       ],
       "properties": {
-        "active": {
-          "description": "is the experiment currently actively sending?",
+        "can_read": {
           "type": "boolean"
         },
-        "clients": {
-          "description": "number of clients connected (0 if just the experiment)",
-          "type": "number",
-          "format": "integer"
+        "can_write": {
+          "type": "boolean"
         },
         "connected": {
-          "description": "is the experiment currently connected to relay?",
-          "type": "boolean"
-        },
-        "last": {
-          "description": "duration since last send by experiment",
+          "description": "date and time connection made",
           "type": "string"
         },
-        "name": {
-          "description": "name of the stream, eg. video, data",
+        "expires_at": {
+          "description": "expiry date and time in the token used to authenticate the connection",
           "type": "string"
         },
-        "required": {
-          "description": "does the experiment require this stream?",
-          "type": "boolean"
+        "remote_addr": {
+          "description": "list of IP addresses for client (typically \u003cclient\u003e, \u003cproxy 1\u003e, etc)",
+          "type": "string"
+        },
+        "scopes": {
+          "description": "list of scopes supplied in token used to authenticate the connection",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stats": {
+          "$ref": "#/definitions/RxTx"
+        },
+        "topic": {
+          "description": "topic_stub for experiment e.g. pend00",
+          "type": "string"
+        },
+        "user_agent": {
+          "description": "what tool is user using to connect",
+          "type": "string"
         }
       }
     }
