@@ -39,11 +39,9 @@ func NewReport() config.Report {
 
 }
 
-// just pass in a context?
-func Serve(ctx context.Context, s *config.Status) {
-
-	r := rc.New()
-	j := jc.New()
+// Run handles connecting to book, jump, relay and updating status
+// jc.Status and rc.Status clients are passed in to allow mocking during testing
+func Run(ctx context.Context, j *jc.Status, r *rc.Status, s *config.Status) {
 
 	go connectRelay(ctx, s, r)
 	go connectJump(ctx, s, j)

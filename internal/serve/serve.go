@@ -13,7 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func API(ctx context.Context, status config.Status) {
+func API(ctx context.Context, status *config.Status) {
 	defer func() {
 		log.Trace("serve.API stopped")
 	}()
@@ -55,10 +55,13 @@ func API(ctx context.Context, status config.Status) {
 
 }
 
-func statusExperimentsHandler(s config.Status) func(operations.StatusExperimentsParams) middleware.Responder {
+func statusExperimentsHandler(s *config.Status) func(operations.StatusExperimentsParams) middleware.Responder {
 
 	return func(params operations.StatusExperimentsParams) middleware.Responder {
 		// convert current status into models version
+
+		s.Lock()
+		defer s.Unlock()
 
 		sm := []*models.ExperimentReport{}
 		for k, v := range s.Experiments {
@@ -139,9 +142,12 @@ func statusExperimentsHandler(s config.Status) func(operations.StatusExperiments
 
 }
 
-func healthEventsHandler(s config.Status) func(operations.HealthEventsParams) middleware.Responder {
+func healthEventsHandler(s *config.Status) func(operations.HealthEventsParams) middleware.Responder {
 
 	return func(params operations.HealthEventsParams) middleware.Responder {
+
+		s.Lock()
+		defer s.Unlock()
 
 		// check topic name
 		if _, ok := s.Experiments[params.Name]; !ok {

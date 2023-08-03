@@ -26,7 +26,6 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/practable/status/internal/status"
@@ -397,8 +396,6 @@ status serve
 			}()
 		}
 
-		var wg sync.WaitGroup
-
 		ctx, cancel := context.WithCancel(context.Background())
 
 		c := make(chan os.Signal, 1)
@@ -412,8 +409,6 @@ status serve
 				os.Exit(0)
 			}
 		}()
-
-		wg.Add(1)
 
 		config := status.Config{
 			BasepathBook:        basepathBook,
@@ -448,9 +443,7 @@ status serve
 			TimeoutBook:         timeoutBook,
 		}
 
-		go status.Serve(ctx, &wg, config)
-
-		wg.Wait()
+		server.Run(ctx, config)
 
 	},
 }
