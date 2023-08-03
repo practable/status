@@ -113,15 +113,18 @@ definitions:
         example: r-spin30
         type: string
       stream_ok:
-        type: boolean
+        type: object
+        additionalProperties:
+          type: boolean
       stream_reports:
         type: object
         additionalProperties:
           $ref: '#/definitions/StreamReport'
       stream_required:
-        type: array
-        items:
-          type: string
+        type: object
+        description: defaults to true for required stream, false currently undefined, but kept as a map for consistenct with stream_reports and stream_ok
+        additionalProperties:
+           type: boolean
       topic_name: 
         description: topic stub in stream names
         example: spin30
