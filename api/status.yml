@@ -95,6 +95,9 @@ definitions:
         type: string
       healthy:
         type: boolean
+      health_events:
+        description: number of health events recorded
+        type: integer
       jump_ok:
         type: boolean
       jump_report:
