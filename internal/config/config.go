@@ -56,10 +56,10 @@ type HealthyIssues struct {
 
 type HealthEvent struct {
 	Healthy  bool
-	When     time.Time
+	Issues   []string
 	JumpOK   bool
 	StreamOK map[string]bool
-	Issues   []string
+	When     time.Time
 }
 
 // Report represents the status

@@ -43,7 +43,34 @@ paths:
           $ref: '#/responses/NotFound'
         500:
           $ref: '#/responses/InternalError'
- 
+          
+  /experiments/events/{name}:
+    get:
+      description:  Get a list of the health events recorded for an experiment
+      summary:  Get the health events for an experiment
+      operationId: healthEvents
+      deprecated: false
+      produces:
+      - application/json
+      parameters:
+      - name: name
+        in: path
+        type: string
+        description: topic_stub of the experiment e.g pend00 (not r-pend00)
+        required: true
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/HealthEvents'
+          headers: {}
+        401:
+          $ref: '#/responses/Unauthorized'
+        404:
+          $ref: '#/responses/NotFound'
+        500:
+          $ref: '#/responses/InternalError'
+          
 definitions:
 
   Error:
@@ -115,6 +142,38 @@ definitions:
     type: array
     items:
       $ref: '#/definitions/ExperimentReport'
+      
+  HealthEvent:
+    title: health event
+    description: information on what streams are available when an experiment changes health status
+    properties:
+      healthy:
+        description: is experiment healthy?
+        type: boolean
+      issues:
+        description: list of issues, if any
+        type: array
+        items:
+          description: individual issue
+          type: string
+      jump_ok:
+        description: is the jump connection ok?
+        type: boolean
+      stream_ok:
+        description: which streams are connected, and are they ok? Name of stream in key
+        type: object
+        additionalProperties:
+          type: boolean
+      when:
+        description: the time and date of the event occurring
+        type: string
+        
+  HealthEvents:
+    title: Health events
+    description: list of health events
+    type: array
+    items:
+      $ref: '#/definitions/HealthEvent'
       
   JumpReport:
     title: Status of the jump connection for an experiment
