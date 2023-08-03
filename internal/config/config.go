@@ -44,7 +44,8 @@ type Config struct {
 // Status represents the overall status of the experiments
 type Status struct {
 	*sync.RWMutex
-	Config      Config
+	Config Config
+	// key is the topic_stub,m e.g. pend00 (and not the resource name r-pend00)
 	Experiments map[string]Report
 }
 
@@ -63,6 +64,7 @@ type HealthEvent struct {
 
 // Report represents the status
 type Report struct {
+	Available           bool
 	FirstChecked        time.Time
 	Healthy             bool
 	HealthEvents        []HealthEvent

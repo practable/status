@@ -35,7 +35,7 @@ paths:
         200:
           description: OK
           schema:
-            $ref: '#/definitions/ExperimentStatuses'
+            $ref: '#/definitions/ExperimentReports'
           headers: {}
         401:
           $ref: '#/responses/Unauthorized'
@@ -43,10 +43,9 @@ paths:
           $ref: '#/responses/NotFound'
         500:
           $ref: '#/responses/InternalError'
-      
-
+ 
 definitions:
-  
+
   Error:
     type: object
     properties:
@@ -58,20 +57,19 @@ definitions:
       - code
       - message
       
-  ExperimentStatus:
-    title: Status of an experiment
+  ExperimentReport:
+    title: Report on the Status of an experiment
     type: object
     properties:
+      available:
+        description: is it set as available on the booking system?
+        type: boolean
       first_checked:
         type: string
       healthy:
-        type: bool
-      health_events:
-        type: array
-        items:
-          $ref: '#/definitions/HealthEvent'
+        type: boolean
       jump_ok:
-        type: bool
+        type: boolean
       jump_report:
         $ref: '#/definitions/JumpReport'
       last_checked_jump:
@@ -85,7 +83,7 @@ definitions:
         example: r-spin30
         type: string
       stream_ok:
-        type: bool
+        type: boolean
       stream_reports:
         type: object
         additionalProperties:
@@ -99,45 +97,92 @@ definitions:
         example: spin30
         type: string
     required:
+      - available
+      - first_checked
       - healthy
       - jump_ok
+      - last_checked_jump
+      - last_checked_streams
+      - last_found_in_manifest
+      - resource_name
       - stream_ok
+      - stream_reports
+      - stream_required
+      - topic_name
       
-
-  ExperimentStatuses:
-    title: List of experiment statuses
+  ExperimentReports:
+    title: List of experiment reports
     type: array
     items:
-       $ref: '#/definitions/ExperimentStatus'
-       
-  BookStatus:
-    title: status of the bookings for an experiment
-    type: object
-    properties:
-      available:
-        description: is experiment available
-        type: boolean
-      reason:
-        description: why experiment is/isn't available
-        type: string
-        
+      $ref: '#/definitions/ExperimentReport'
+      
   JumpReport:
     title: Status of the jump connection for an experiment
     type: object
     properties:
-      client_count:
-        description: number of clients connected (0 if just the experiment)
-        type: number
-        format: integer
-      connected:
-        description: is the experiment currently connected to jump?
+      can_read:
         type: boolean
+      can_write:
+        type: boolean
+      connected:
+        description: date and time connection made
+        type: string
+      expires_at:
+        description: expiry date and time in the token used to authenticate the connection
+        type: string
+      remote_addr:
+        description: list of IP addresses for client (typically <client>, <proxy 1>, etc)
+        type: string
+      scopes:
+        type: array
+        description: list of scopes supplied in token used to authenticate the connection
+        items:
+          type: string
+      stats:
+        $ref: '#/definitions/RxTx'
+      topic:
+        description: topic_stub for experiment e.g. pend00
+        type: string        
+      user_agent:
+        description: what tool is user using to connect
+        type: string
     required:
-    - clients
     - connected
+    - expires_at
+    - scopes
+    - stats
+    - topic
+    - user_agent
+    
+  RxTx:
+    description: receive and transmit statistics for a connection
+    type: object
+    properties:
+      rx:
+        $ref: '#/definitions/Statistics'
+      tx:
+        $ref: '#/definitions/Statistics'
 
-
-  StreamStatus:
+  Statistics:
+    description: connection statistics
+    type: object
+    properties:
+      fps:
+        description: messages per second (frames per second if video)
+        type: integer
+      last:
+        description: date and time of the last message sent
+        type: string
+      never:
+        description: true if not messages ever sent on this connection
+        type: boolean
+      size:
+        description: size in bytes of the last message sent
+        type: integer        
+        
+      
+  
+  StreamReport:
     title: Status of a stream
     type: object
     properties:
@@ -167,29 +212,6 @@ definitions:
     - connected
     - last
     
-  TestStatus:
-    title: Status of a test
-    type: object
-    properties:
-      passed:
-        description: did the experiment pass the test last time?
-        type: boolean
-      score:
-        description: number of tests passed to date
-        type: number
-        format: integer
-      attempts:
-        description: number of tests attempted to date
-        type: number
-        format: integer
-      last:
-        description: RFC3339 datetime of last test
-        type: string
-    required:
-    - passed
-    - last
-
-
 responses:
   NotFound:
     description: The specified resource was not found
