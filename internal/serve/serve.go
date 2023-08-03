@@ -137,3 +137,33 @@ func statusExperimentsHandler(s config.Status) func(operations.StatusExperiments
 	}
 
 }
+
+func healthEventsHandler(s config.Status) func(operations.HealthEventsParams) middleware.Responder {
+
+	return func(params operations.HealthEventsParams) middleware.Responder {
+
+		// check topic name
+		if _, ok := s.Experiments[params.Name]; !ok {
+			return operations.NewHealthEventsNotFound()
+		}
+
+		hes := []*models.HealthEvent{}
+
+		for _, v := range s.Experiments[params.Name].HealthEvents {
+
+			he := models.HealthEvent{
+				Healthy:  v.Healthy,
+				Issues:   v.Issues,
+				JumpOk:   v.JumpOK,
+				StreamOk: v.StreamOK,
+				When:     v.When.String(),
+			}
+			hes = append(hes, &he)
+
+		}
+
+		return operations.NewHealthEventsOK().WithPayload(hes)
+
+	}
+
+}
