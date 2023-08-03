@@ -42,6 +42,9 @@ func NewServeAPI(spec *loads.Document) *ServeAPI {
 
 		JSONProducer: runtime.JSONProducer(),
 
+		HealthEventsHandler: HealthEventsHandlerFunc(func(params HealthEventsParams) middleware.Responder {
+			return middleware.NotImplemented("operation HealthEvents has not yet been implemented")
+		}),
 		StatusExperimentsHandler: StatusExperimentsHandlerFunc(func(params StatusExperimentsParams) middleware.Responder {
 			return middleware.NotImplemented("operation StatusExperiments has not yet been implemented")
 		}),
@@ -81,6 +84,8 @@ type ServeAPI struct {
 	//   - application/json
 	JSONProducer runtime.Producer
 
+	// HealthEventsHandler sets the operation handler for the health events operation
+	HealthEventsHandler HealthEventsHandler
 	// StatusExperimentsHandler sets the operation handler for the status experiments operation
 	StatusExperimentsHandler StatusExperimentsHandler
 
@@ -160,6 +165,9 @@ func (o *ServeAPI) Validate() error {
 		unregistered = append(unregistered, "JSONProducer")
 	}
 
+	if o.HealthEventsHandler == nil {
+		unregistered = append(unregistered, "HealthEventsHandler")
+	}
 	if o.StatusExperimentsHandler == nil {
 		unregistered = append(unregistered, "StatusExperimentsHandler")
 	}
@@ -251,6 +259,10 @@ func (o *ServeAPI) initHandlerCache() {
 		o.handlers = make(map[string]map[string]http.Handler)
 	}
 
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/experiments/events/{name}"] = NewHealthEvents(o.context, o.HealthEventsHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}

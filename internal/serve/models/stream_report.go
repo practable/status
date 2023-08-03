@@ -14,10 +14,10 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// StreamStatus Status of a stream
+// StreamReport Status of a stream
 //
-// swagger:model StreamStatus
-type StreamStatus struct {
+// swagger:model StreamReport
+type StreamReport struct {
 
 	// is the experiment currently actively sending?
 	// Required: true
@@ -43,8 +43,8 @@ type StreamStatus struct {
 	Required bool `json:"required,omitempty"`
 }
 
-// Validate validates this stream status
-func (m *StreamStatus) Validate(formats strfmt.Registry) error {
+// Validate validates this stream report
+func (m *StreamReport) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateActive(formats); err != nil {
@@ -73,7 +73,7 @@ func (m *StreamStatus) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *StreamStatus) validateActive(formats strfmt.Registry) error {
+func (m *StreamReport) validateActive(formats strfmt.Registry) error {
 
 	if err := validate.Required("active", "body", m.Active); err != nil {
 		return err
@@ -82,7 +82,7 @@ func (m *StreamStatus) validateActive(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *StreamStatus) validateClients(formats strfmt.Registry) error {
+func (m *StreamReport) validateClients(formats strfmt.Registry) error {
 
 	if err := validate.Required("clients", "body", m.Clients); err != nil {
 		return err
@@ -91,7 +91,7 @@ func (m *StreamStatus) validateClients(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *StreamStatus) validateConnected(formats strfmt.Registry) error {
+func (m *StreamReport) validateConnected(formats strfmt.Registry) error {
 
 	if err := validate.Required("connected", "body", m.Connected); err != nil {
 		return err
@@ -100,7 +100,7 @@ func (m *StreamStatus) validateConnected(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *StreamStatus) validateLast(formats strfmt.Registry) error {
+func (m *StreamReport) validateLast(formats strfmt.Registry) error {
 
 	if err := validate.Required("last", "body", m.Last); err != nil {
 		return err
@@ -109,7 +109,7 @@ func (m *StreamStatus) validateLast(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *StreamStatus) validateName(formats strfmt.Registry) error {
+func (m *StreamReport) validateName(formats strfmt.Registry) error {
 
 	if err := validate.Required("name", "body", m.Name); err != nil {
 		return err
@@ -118,13 +118,13 @@ func (m *StreamStatus) validateName(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validates this stream status based on context it is used
-func (m *StreamStatus) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validates this stream report based on context it is used
+func (m *StreamReport) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *StreamStatus) MarshalBinary() ([]byte, error) {
+func (m *StreamReport) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -132,8 +132,8 @@ func (m *StreamStatus) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *StreamStatus) UnmarshalBinary(b []byte) error {
-	var res StreamStatus
+func (m *StreamReport) UnmarshalBinary(b []byte) error {
+	var res StreamReport
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

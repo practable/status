@@ -53,7 +53,43 @@ func init() {
           "200": {
             "description": "OK",
             "schema": {
-              "$ref": "#/definitions/ExperimentStatuses"
+              "$ref": "#/definitions/ExperimentReports"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/experiments/events/{name}": {
+      "get": {
+        "description": "Get a list of the health events recorded for an experiment",
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Get the health events for an experiment",
+        "operationId": "healthEvents",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "topic_stub of the experiment e.g pend00 (not r-pend00)",
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/HealthEvents"
             }
           },
           "401": {
@@ -70,20 +106,6 @@ func init() {
     }
   },
   "definitions": {
-    "BookStatus": {
-      "type": "object",
-      "title": "status of the bookings for an experiment",
-      "properties": {
-        "available": {
-          "description": "is experiment available",
-          "type": "boolean"
-        },
-        "reason": {
-          "description": "why experiment is/isn't available",
-          "type": "string"
-        }
-      }
-    },
     "Error": {
       "type": "object",
       "required": [
@@ -99,69 +121,213 @@ func init() {
         }
       }
     },
-    "ExperimentStatus": {
+    "ExperimentReport": {
       "type": "object",
-      "title": "Status of an experiment",
+      "title": "Report on the Status of an experiment",
       "required": [
-        "address",
-        "jump",
-        "name",
-        "relay"
+        "available",
+        "first_checked",
+        "healthy",
+        "jump_ok",
+        "last_checked_jump",
+        "last_checked_streams",
+        "last_found_in_manifest",
+        "resource_name",
+        "stream_ok",
+        "stream_reports",
+        "stream_required",
+        "topic_name"
       ],
       "properties": {
-        "address": {
-          "description": "the ip address",
+        "available": {
+          "description": "is it set as available on the booking system?",
+          "type": "boolean"
+        },
+        "first_checked": {
           "type": "string"
         },
-        "book": {
-          "$ref": "#/definitions/BookStatus"
+        "health_events": {
+          "description": "number of health events recorded",
+          "type": "integer"
         },
-        "jump": {
-          "$ref": "#/definitions/JumpStatus"
+        "healthy": {
+          "type": "boolean"
         },
-        "name": {
-          "description": "name of the experiment",
+        "jump_ok": {
+          "type": "boolean"
+        },
+        "jump_report": {
+          "$ref": "#/definitions/JumpReport"
+        },
+        "last_checked_jump": {
+          "type": "string"
+        },
+        "last_checked_streams": {
+          "type": "string"
+        },
+        "last_found_in_manifest": {
+          "type": "string"
+        },
+        "resource_name": {
+          "description": "name of the resouce in the manifest",
           "type": "string",
-          "example": "spin30"
+          "example": "r-spin30"
         },
-        "relay": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/StreamStatus"
+        "stream_ok": {
+          "type": "boolean"
+        },
+        "stream_reports": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/StreamReport"
           }
         },
-        "test": {
-          "$ref": "#/definitions/TestStatus"
+        "stream_required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "topic_name": {
+          "description": "topic stub in stream names",
+          "type": "string",
+          "example": "spin30"
         }
       }
     },
-    "ExperimentStatuses": {
+    "ExperimentReports": {
       "type": "array",
-      "title": "List of experiment statuses",
+      "title": "List of experiment reports",
       "items": {
-        "$ref": "#/definitions/ExperimentStatus"
+        "$ref": "#/definitions/ExperimentReport"
       }
     },
-    "JumpStatus": {
+    "HealthEvent": {
+      "description": "information on what streams are available when an experiment changes health status",
+      "title": "health event",
+      "properties": {
+        "healthy": {
+          "description": "is experiment healthy?",
+          "type": "boolean"
+        },
+        "issues": {
+          "description": "list of issues, if any",
+          "type": "array",
+          "items": {
+            "description": "individual issue",
+            "type": "string"
+          }
+        },
+        "jump_ok": {
+          "description": "is the jump connection ok?",
+          "type": "boolean"
+        },
+        "stream_ok": {
+          "description": "which streams are connected, and are they ok? Name of stream in key",
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        },
+        "when": {
+          "description": "the time and date of the event occurring",
+          "type": "string"
+        }
+      }
+    },
+    "HealthEvents": {
+      "description": "list of health events",
+      "type": "array",
+      "title": "Health events",
+      "items": {
+        "$ref": "#/definitions/HealthEvent"
+      }
+    },
+    "JumpReport": {
       "type": "object",
       "title": "Status of the jump connection for an experiment",
       "required": [
-        "clients",
-        "connected"
+        "connected",
+        "expires_at",
+        "scopes",
+        "stats",
+        "topic",
+        "user_agent"
       ],
       "properties": {
-        "clients": {
-          "description": "number of clients connected (0 if just the experiment)",
-          "type": "number",
-          "format": "integer"
+        "can_read": {
+          "type": "boolean"
+        },
+        "can_write": {
+          "type": "boolean"
         },
         "connected": {
-          "description": "is the experiment currently connected to jump?",
-          "type": "boolean"
+          "description": "date and time connection made",
+          "type": "string"
+        },
+        "expires_at": {
+          "description": "expiry date and time in the token used to authenticate the connection",
+          "type": "string"
+        },
+        "remote_addr": {
+          "description": "list of IP addresses for client (typically \u003cclient\u003e, \u003cproxy 1\u003e, etc)",
+          "type": "string"
+        },
+        "scopes": {
+          "description": "list of scopes supplied in token used to authenticate the connection",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stats": {
+          "$ref": "#/definitions/RxTx"
+        },
+        "topic": {
+          "description": "topic_stub for experiment e.g. pend00",
+          "type": "string"
+        },
+        "user_agent": {
+          "description": "what tool is user using to connect",
+          "type": "string"
         }
       }
     },
-    "StreamStatus": {
+    "RxTx": {
+      "description": "receive and transmit statistics for a connection",
+      "type": "object",
+      "properties": {
+        "rx": {
+          "$ref": "#/definitions/Statistics"
+        },
+        "tx": {
+          "$ref": "#/definitions/Statistics"
+        }
+      }
+    },
+    "Statistics": {
+      "description": "connection statistics",
+      "type": "object",
+      "properties": {
+        "fps": {
+          "description": "messages per second (frames per second if video)",
+          "type": "integer"
+        },
+        "last": {
+          "description": "date and time of the last message sent",
+          "type": "string"
+        },
+        "never": {
+          "description": "true if not messages ever sent on this connection",
+          "type": "boolean"
+        },
+        "size": {
+          "description": "size in bytes of the last message sent",
+          "type": "integer"
+        }
+      }
+    },
+    "StreamReport": {
       "type": "object",
       "title": "Status of a stream",
       "required": [
@@ -196,34 +362,6 @@ func init() {
         "required": {
           "description": "does the experiment require this stream?",
           "type": "boolean"
-        }
-      }
-    },
-    "TestStatus": {
-      "type": "object",
-      "title": "Status of a test",
-      "required": [
-        "passed",
-        "last"
-      ],
-      "properties": {
-        "attempts": {
-          "description": "number of tests attempted to date",
-          "type": "number",
-          "format": "integer"
-        },
-        "last": {
-          "description": "RFC3339 datetime of last test",
-          "type": "string"
-        },
-        "passed": {
-          "description": "did the experiment pass the test last time?",
-          "type": "boolean"
-        },
-        "score": {
-          "description": "number of tests passed to date",
-          "type": "number",
-          "format": "integer"
         }
       }
     }
@@ -292,7 +430,52 @@ func init() {
           "200": {
             "description": "OK",
             "schema": {
-              "$ref": "#/definitions/ExperimentStatuses"
+              "$ref": "#/definitions/ExperimentReports"
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Internal Error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/experiments/events/{name}": {
+      "get": {
+        "description": "Get a list of the health events recorded for an experiment",
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Get the health events for an experiment",
+        "operationId": "healthEvents",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "topic_stub of the experiment e.g pend00 (not r-pend00)",
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/HealthEvents"
             }
           },
           "401": {
@@ -318,20 +501,6 @@ func init() {
     }
   },
   "definitions": {
-    "BookStatus": {
-      "type": "object",
-      "title": "status of the bookings for an experiment",
-      "properties": {
-        "available": {
-          "description": "is experiment available",
-          "type": "boolean"
-        },
-        "reason": {
-          "description": "why experiment is/isn't available",
-          "type": "string"
-        }
-      }
-    },
     "Error": {
       "type": "object",
       "required": [
@@ -347,69 +516,213 @@ func init() {
         }
       }
     },
-    "ExperimentStatus": {
+    "ExperimentReport": {
       "type": "object",
-      "title": "Status of an experiment",
+      "title": "Report on the Status of an experiment",
       "required": [
-        "address",
-        "jump",
-        "name",
-        "relay"
+        "available",
+        "first_checked",
+        "healthy",
+        "jump_ok",
+        "last_checked_jump",
+        "last_checked_streams",
+        "last_found_in_manifest",
+        "resource_name",
+        "stream_ok",
+        "stream_reports",
+        "stream_required",
+        "topic_name"
       ],
       "properties": {
-        "address": {
-          "description": "the ip address",
+        "available": {
+          "description": "is it set as available on the booking system?",
+          "type": "boolean"
+        },
+        "first_checked": {
           "type": "string"
         },
-        "book": {
-          "$ref": "#/definitions/BookStatus"
+        "health_events": {
+          "description": "number of health events recorded",
+          "type": "integer"
         },
-        "jump": {
-          "$ref": "#/definitions/JumpStatus"
+        "healthy": {
+          "type": "boolean"
         },
-        "name": {
-          "description": "name of the experiment",
+        "jump_ok": {
+          "type": "boolean"
+        },
+        "jump_report": {
+          "$ref": "#/definitions/JumpReport"
+        },
+        "last_checked_jump": {
+          "type": "string"
+        },
+        "last_checked_streams": {
+          "type": "string"
+        },
+        "last_found_in_manifest": {
+          "type": "string"
+        },
+        "resource_name": {
+          "description": "name of the resouce in the manifest",
           "type": "string",
-          "example": "spin30"
+          "example": "r-spin30"
         },
-        "relay": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/StreamStatus"
+        "stream_ok": {
+          "type": "boolean"
+        },
+        "stream_reports": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/StreamReport"
           }
         },
-        "test": {
-          "$ref": "#/definitions/TestStatus"
+        "stream_required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "topic_name": {
+          "description": "topic stub in stream names",
+          "type": "string",
+          "example": "spin30"
         }
       }
     },
-    "ExperimentStatuses": {
+    "ExperimentReports": {
       "type": "array",
-      "title": "List of experiment statuses",
+      "title": "List of experiment reports",
       "items": {
-        "$ref": "#/definitions/ExperimentStatus"
+        "$ref": "#/definitions/ExperimentReport"
       }
     },
-    "JumpStatus": {
+    "HealthEvent": {
+      "description": "information on what streams are available when an experiment changes health status",
+      "title": "health event",
+      "properties": {
+        "healthy": {
+          "description": "is experiment healthy?",
+          "type": "boolean"
+        },
+        "issues": {
+          "description": "list of issues, if any",
+          "type": "array",
+          "items": {
+            "description": "individual issue",
+            "type": "string"
+          }
+        },
+        "jump_ok": {
+          "description": "is the jump connection ok?",
+          "type": "boolean"
+        },
+        "stream_ok": {
+          "description": "which streams are connected, and are they ok? Name of stream in key",
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        },
+        "when": {
+          "description": "the time and date of the event occurring",
+          "type": "string"
+        }
+      }
+    },
+    "HealthEvents": {
+      "description": "list of health events",
+      "type": "array",
+      "title": "Health events",
+      "items": {
+        "$ref": "#/definitions/HealthEvent"
+      }
+    },
+    "JumpReport": {
       "type": "object",
       "title": "Status of the jump connection for an experiment",
       "required": [
-        "clients",
-        "connected"
+        "connected",
+        "expires_at",
+        "scopes",
+        "stats",
+        "topic",
+        "user_agent"
       ],
       "properties": {
-        "clients": {
-          "description": "number of clients connected (0 if just the experiment)",
-          "type": "number",
-          "format": "integer"
+        "can_read": {
+          "type": "boolean"
+        },
+        "can_write": {
+          "type": "boolean"
         },
         "connected": {
-          "description": "is the experiment currently connected to jump?",
-          "type": "boolean"
+          "description": "date and time connection made",
+          "type": "string"
+        },
+        "expires_at": {
+          "description": "expiry date and time in the token used to authenticate the connection",
+          "type": "string"
+        },
+        "remote_addr": {
+          "description": "list of IP addresses for client (typically \u003cclient\u003e, \u003cproxy 1\u003e, etc)",
+          "type": "string"
+        },
+        "scopes": {
+          "description": "list of scopes supplied in token used to authenticate the connection",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stats": {
+          "$ref": "#/definitions/RxTx"
+        },
+        "topic": {
+          "description": "topic_stub for experiment e.g. pend00",
+          "type": "string"
+        },
+        "user_agent": {
+          "description": "what tool is user using to connect",
+          "type": "string"
         }
       }
     },
-    "StreamStatus": {
+    "RxTx": {
+      "description": "receive and transmit statistics for a connection",
+      "type": "object",
+      "properties": {
+        "rx": {
+          "$ref": "#/definitions/Statistics"
+        },
+        "tx": {
+          "$ref": "#/definitions/Statistics"
+        }
+      }
+    },
+    "Statistics": {
+      "description": "connection statistics",
+      "type": "object",
+      "properties": {
+        "fps": {
+          "description": "messages per second (frames per second if video)",
+          "type": "integer"
+        },
+        "last": {
+          "description": "date and time of the last message sent",
+          "type": "string"
+        },
+        "never": {
+          "description": "true if not messages ever sent on this connection",
+          "type": "boolean"
+        },
+        "size": {
+          "description": "size in bytes of the last message sent",
+          "type": "integer"
+        }
+      }
+    },
+    "StreamReport": {
       "type": "object",
       "title": "Status of a stream",
       "required": [
@@ -444,34 +757,6 @@ func init() {
         "required": {
           "description": "does the experiment require this stream?",
           "type": "boolean"
-        }
-      }
-    },
-    "TestStatus": {
-      "type": "object",
-      "title": "Status of a test",
-      "required": [
-        "passed",
-        "last"
-      ],
-      "properties": {
-        "attempts": {
-          "description": "number of tests attempted to date",
-          "type": "number",
-          "format": "integer"
-        },
-        "last": {
-          "description": "RFC3339 datetime of last test",
-          "type": "string"
-        },
-        "passed": {
-          "description": "did the experiment pass the test last time?",
-          "type": "boolean"
-        },
-        "score": {
-          "description": "number of tests passed to date",
-          "type": "number",
-          "format": "integer"
         }
       }
     }

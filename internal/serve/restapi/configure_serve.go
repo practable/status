@@ -37,6 +37,11 @@ func configureAPI(api *operations.ServeAPI) http.Handler {
 
 	api.JSONProducer = runtime.JSONProducer()
 
+	if api.HealthEventsHandler == nil {
+		api.HealthEventsHandler = operations.HealthEventsHandlerFunc(func(params operations.HealthEventsParams) middleware.Responder {
+			return middleware.NotImplemented("operation operations.HealthEvents has not yet been implemented")
+		})
+	}
 	if api.StatusExperimentsHandler == nil {
 		api.StatusExperimentsHandler = operations.StatusExperimentsHandlerFunc(func(params operations.StatusExperimentsParams) middleware.Responder {
 			return middleware.NotImplemented("operation operations.StatusExperiments has not yet been implemented")

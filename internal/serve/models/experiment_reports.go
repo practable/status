@@ -14,13 +14,13 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ExperimentStatuses List of experiment statuses
+// ExperimentReports List of experiment reports
 //
-// swagger:model ExperimentStatuses
-type ExperimentStatuses []*ExperimentStatus
+// swagger:model ExperimentReports
+type ExperimentReports []*ExperimentReport
 
-// Validate validates this experiment statuses
-func (m ExperimentStatuses) Validate(formats strfmt.Registry) error {
+// Validate validates this experiment reports
+func (m ExperimentReports) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	for i := 0; i < len(m); i++ {
@@ -47,8 +47,8 @@ func (m ExperimentStatuses) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validate this experiment statuses based on the context it is used
-func (m ExperimentStatuses) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validate this experiment reports based on the context it is used
+func (m ExperimentReports) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	for i := 0; i < len(m); i++ {

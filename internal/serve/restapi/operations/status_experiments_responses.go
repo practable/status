@@ -25,7 +25,7 @@ type StatusExperimentsOK struct {
 	/*
 	  In: Body
 	*/
-	Payload models.ExperimentStatuses `json:"body,omitempty"`
+	Payload models.ExperimentReports `json:"body,omitempty"`
 }
 
 // NewStatusExperimentsOK creates StatusExperimentsOK with default headers values
@@ -35,13 +35,13 @@ func NewStatusExperimentsOK() *StatusExperimentsOK {
 }
 
 // WithPayload adds the payload to the status experiments o k response
-func (o *StatusExperimentsOK) WithPayload(payload models.ExperimentStatuses) *StatusExperimentsOK {
+func (o *StatusExperimentsOK) WithPayload(payload models.ExperimentReports) *StatusExperimentsOK {
 	o.Payload = payload
 	return o
 }
 
 // SetPayload sets the payload to the status experiments o k response
-func (o *StatusExperimentsOK) SetPayload(payload models.ExperimentStatuses) {
+func (o *StatusExperimentsOK) SetPayload(payload models.ExperimentReports) {
 	o.Payload = payload
 }
 
@@ -52,7 +52,7 @@ func (o *StatusExperimentsOK) WriteResponse(rw http.ResponseWriter, producer run
 	payload := o.Payload
 	if payload == nil {
 		// return empty array
-		payload = models.ExperimentStatuses{}
+		payload = models.ExperimentReports{}
 	}
 
 	if err := producer.Produce(rw, payload); err != nil {
