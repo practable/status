@@ -30,6 +30,7 @@ func API(ctx context.Context, status config.Status) {
 
 	// set the Handlers
 	api.StatusExperimentsHandler = operations.StatusExperimentsHandlerFunc(statusExperimentsHandler(status))
+	api.HealthEventsHandler = operations.HealthEventsHandlerFunc(healthEventsHandler(status))
 
 	go func() {
 		defer func() {
