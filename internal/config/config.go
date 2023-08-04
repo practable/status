@@ -47,7 +47,7 @@ type Status struct {
 	Config Config
 	// key is the topic_stub,m e.g. pend00 (and not the resource name r-pend00)
 	Experiments map[string]Report
-	now         func() time.Time
+	Now         func() time.Time
 }
 
 type HealthyIssues struct {
@@ -106,5 +106,5 @@ func (s *Status) WithConfig(config Config) *Status {
 }
 
 func (s *Status) SetNow(now func() time.Time) {
-	s.now = now
+	s.Now = now
 }

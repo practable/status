@@ -24,10 +24,10 @@ import (
 //ro "github.com/practable/status/internal/relay/operations"
 //rm "github.com/practable/status/internal/relay/models"
 
-func NewReport() config.Report {
+func NewReport(s *config.Status) config.Report {
 
 	return config.Report{
-		FirstChecked:   time.Now(),
+		FirstChecked:   s.Now(),
 		Healthy:        false,
 		HealthEvents:   []config.HealthEvent{},
 		JumpOK:         false,
@@ -63,9 +63,9 @@ func connectRelay(ctx context.Context, s *config.Status, r *rc.Status) {
 			return
 		default:
 			// make token for relay stats connection for duration config.ReconnectRelayEvery
-			iat := time.Now()
-			nbf := time.Now()
-			exp := time.Now().Add(s.Config.ReconnectRelayEvery)
+			iat := s.Now()
+			nbf := s.Now()
+			exp := s.Now().Add(s.Config.ReconnectRelayEvery)
 			log.WithFields(log.Fields{"iat": iat, "nbf": nbf, "exp": exp}).Trace("Token times")
 			aud := s.Config.SchemeRelay + "://" + path.Join(s.Config.HostRelay, s.Config.BasepathRelay)
 			bid := "status-server"
@@ -95,9 +95,9 @@ func connectJump(ctx context.Context, s *config.Status, j *jc.Status) {
 			return
 		default:
 			// make token for relay stats connection for duration config.ReconnectRelayEvery
-			iat := time.Now()
-			nbf := time.Now()
-			exp := time.Now().Add(s.Config.ReconnectJumpEvery)
+			iat := s.Now()
+			nbf := s.Now()
+			exp := s.Now().Add(s.Config.ReconnectJumpEvery)
 			log.WithFields(log.Fields{"iat": iat, "nbf": nbf, "exp": exp}).Trace("Token times")
 			aud := s.Config.SchemeJump + "://" + path.Join(s.Config.HostJump, s.Config.BasepathJump)
 			bid := "status-server"
@@ -142,9 +142,9 @@ func connectBook(ctx context.Context, s *config.Status) {
 			secret := s.Config.SecretBook
 			scopes := []string{"booking:admin"}
 
-			iat := time.Now()
-			nbf := time.Now().Add(-1 * time.Second)
-			exp := time.Now().Add(s.Config.QueryBookEvery)
+			iat := s.Now()
+			nbf := s.Now().Add(-1 * time.Second)
+			exp := s.Now().Add(s.Config.QueryBookEvery)
 
 			tk, err := bc.NewToken(audience, subject, secret, scopes, iat, nbf, exp)
 
@@ -172,7 +172,7 @@ func connectBook(ctx context.Context, s *config.Status) {
 				ex := s.Experiments[r.TopicStub]
 				ex.StreamRequired = streams
 				ex.ResourceName = r.Name
-				ex.LastFoundInManifest = time.Now()
+				ex.LastFoundInManifest = s.Now()
 				s.Experiments[r.TopicStub] = ex
 			}
 
@@ -244,7 +244,7 @@ func processJump(ctx context.Context, s *config.Status, j *jc.Status) {
 func updateFromJump(s *config.Status, reports []jc.Report) {
 	s.Lock()
 	defer s.Unlock()
-	now := time.Now()
+	now := s.Now()
 	for _, r := range reports {
 
 		// skip non-hosts
@@ -254,7 +254,7 @@ func updateFromJump(s *config.Status, reports []jc.Report) {
 
 		// initialise experiment's entry if not yet present
 		if _, ok := s.Experiments[r.Topic]; !ok {
-			s.Experiments[r.Topic] = NewReport()
+			s.Experiments[r.Topic] = NewReport(s) //pass status to get time
 		}
 
 		expt := s.Experiments[r.Topic]
@@ -273,7 +273,7 @@ func updateFromRelay(s *config.Status, reports []rc.Report) {
 	s.Lock()
 	defer s.Unlock()
 
-	now := time.Now()
+	now := s.Now()
 
 	for _, r := range reports {
 
@@ -288,7 +288,7 @@ func updateFromRelay(s *config.Status, reports []rc.Report) {
 
 		// initialise experiment's entry if not yet present
 		if _, ok := s.Experiments[id]; !ok {
-			s.Experiments[id] = NewReport()
+			s.Experiments[id] = NewReport(s) //pass status to get time
 		}
 
 		stream := r.Topic
@@ -349,7 +349,7 @@ func updateHealth(s *config.Status) {
 
 	hm := make(map[string]config.HealthyIssues)
 
-	now := time.Now()
+	now := s.Now()
 
 	for k, v := range s.Experiments {
 

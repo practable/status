@@ -25,15 +25,16 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-var debug bool
+var bookAdminAuth rt.ClientAuthInfoWriter
 var ct time.Time
 var ctp *time.Time
-var timeout time.Duration
-var s *config.Status
-var bookAdminAuth rt.ClientAuthInfoWriter
-
+var debug bool
+var j *jc.Status
 var manifestYAML []byte
 var manifestJSON []byte
+var r *rc.Status
+var s *config.Status
+var timeout time.Duration
 
 type TestReports struct {
 	Jump  map[string]JumpReports  `yaml:"jump" json:"jump"`
@@ -50,10 +51,10 @@ type RelayReports struct {
 	Reports     []rc.Report
 }
 
-func setNow(s *config.Status, now time.Time) {
-	ct = now //this updates the jwt time function via ctp
-	s.SetNow(func() time.Time { return now })
+func setNow(now time.Time) {
+	ct = now //this updates the status server and jwt time functions via ctp
 }
+
 func init() {
 	debug = true
 	if debug {
@@ -280,11 +281,12 @@ func TestMain(m *testing.M) {
 		SendEmail:           true,
 		TimeoutBook:         time.Minute,
 	}
+	s.Now = func() time.Time { return *ctp }
 
 	// supply jump and relay clients so we can mock messages
 
-	j := jc.New()
-	r := rc.New()
+	j = jc.New()
+	r = rc.New()
 	go Run(ctx, j, r, s) //doesn't include the API server
 
 	time.Sleep(time.Second) //let status start
@@ -349,22 +351,10 @@ func TestAllOK(t *testing.T) {
 	jr = reports.Jump["set00"].Reports
 	rr = reports.Relay["set00"].Reports
 
-	fmt.Printf("\n\n%v\n\n", jr)
-	fmt.Printf("\n\n%v\n\n", rr)
-	/*
-
-
-		reportsJSON, err := yaml.YAMLToJSON(reportsYAML)
-
-		if err != nil {
-			panic(err)
-		}
-
-
-		fmt.Printf("\n\n\n%v\n\n\n", string(reportsYAML))
-		fmt.Printf("\n\n\n%v\n\n\n", string(reportsJSON))
-
-	*/
+	if debug {
+		fmt.Printf("\n\n%v\n\n", jr)
+		fmt.Printf("\n\n%v\n\n", rr)
+	}
 
 	/*
 
@@ -382,6 +372,9 @@ func TestAllOK(t *testing.T) {
 		       test08 N/A                none      client-only    n/a      n/a        should be ignored, and not appear in statistics on experiments
 
 	*/
+
+	j.Status <- jr
+	r.Status <- rr
 
 	// prepare reports
 	// send reports
