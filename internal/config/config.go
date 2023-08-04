@@ -47,6 +47,7 @@ type Status struct {
 	Config Config
 	// key is the topic_stub,m e.g. pend00 (and not the resource name r-pend00)
 	Experiments map[string]Report
+	now         func() time.Time
 }
 
 type HealthyIssues struct {
@@ -85,11 +86,25 @@ func New() *Status {
 		&sync.RWMutex{},
 		Config{},
 		make(map[string]Report),
+		func() time.Time { return time.Now() },
 	}
 
+}
+
+// ClearExperiments removes all experiment reports
+// this is intended for use only in testing, between test cases
+
+func (s *Status) ClearExperiments() {
+	s.Lock()
+	defer s.Unlock()
+	s.Experiments = make(map[string]Report)
 }
 
 func (s *Status) WithConfig(config Config) *Status {
 	s.Config = config
 	return s
+}
+
+func (s *Status) SetNow(now func() time.Time) {
+	s.now = now
 }

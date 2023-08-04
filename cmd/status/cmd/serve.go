@@ -28,7 +28,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/practable/status/internal/status"
+	"github.com/practable/status/internal/config"
+	"github.com/practable/status/internal/server"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -405,12 +406,11 @@ status serve
 		go func() {
 			for range c {
 				cancel()
-				wg.Wait()
 				os.Exit(0)
 			}
 		}()
 
-		config := status.Config{
+		config := config.Config{
 			BasepathBook:        basepathBook,
 			BasepathJump:        basepathJump,
 			BasepathRelay:       basepathRelay,

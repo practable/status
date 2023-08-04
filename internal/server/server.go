@@ -7,6 +7,7 @@ import (
 	rc "github.com/practable/relay/pkg/status"
 	"github.com/practable/status/internal/config"
 	"github.com/practable/status/internal/serve"
+	"github.com/practable/status/internal/status"
 )
 
 // Run starts all goroutines/services need to run a status process
