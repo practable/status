@@ -35,6 +35,21 @@ var bookAdminAuth rt.ClientAuthInfoWriter
 var manifestYAML []byte
 var manifestJSON []byte
 
+type TestReports struct {
+	Jump  map[string]JumpReports  `yaml:"jump" json:"jump"`
+	Relay map[string]RelayReports `yaml:"relay" json:"relay"`
+}
+
+type JumpReports struct {
+	Description string
+	Reports     []jc.Report
+}
+
+type RelayReports struct {
+	Description string
+	Reports     []rc.Report
+}
+
 func setNow(s *config.Status, now time.Time) {
 	ct = now //this updates the jwt time function via ctp
 	s.SetNow(func() time.Time { return now })
@@ -246,16 +261,16 @@ func TestMain(m *testing.M) {
 		EmailSubject:        "test",
 		EmailTo:             []string{"to@test.org"},
 		HealthEvents:        10,
-		HealthLast:          time.Duration(1 * time.Second),
-		HealthLogEvery:      time.Duration(1 * time.Second),
-		HealthStartup:       time.Duration(1 * time.Second),
+		HealthLast:          time.Duration(10 * time.Second),
+		HealthLogEvery:      time.Hour,   //prevent interfering with test
+		HealthStartup:       time.Minute, // won't cause actual delays
 		HostBook:            hostBook,
 		HostJump:            hostJump,
 		HostRelay:           hostRelay,
 		Port:                portServe,
-		QueryBookEvery:      time.Duration(1 * time.Second),
-		ReconnectJumpEvery:  time.Duration(1 * time.Hour),
-		ReconnectRelayEvery: time.Duration(1 * time.Hour),
+		QueryBookEvery:      time.Hour,
+		ReconnectJumpEvery:  time.Hour,
+		ReconnectRelayEvery: time.Hour,
 		SchemeBook:          schemeBook,
 		SchemeJump:          schemeJump,
 		SchemeRelay:         schemeRelay,
@@ -311,4 +326,81 @@ func TestGetStream(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, "", stream)
 
+}
+
+// TestAllOK checks that with good
+func TestAllOK(t *testing.T) {
+
+	reportsYAML, err := ioutil.ReadFile("reports.yaml")
+	if err != nil {
+		log.Printf("yamlFile.Get err   #%v ", err)
+		panic(err)
+	}
+
+	var reports TestReports
+
+	err = yaml.Unmarshal(reportsYAML, &reports)
+
+	assert.NoError(t, err)
+
+	var jr []jc.Report
+	//var rr []rc.Report
+
+	jr = reports.Jump["set00"].Reports
+
+	fmt.Printf("\n\n%v\n\n", jr)
+
+	/*
+
+
+		reportsJSON, err := yaml.YAMLToJSON(reportsYAML)
+
+		if err != nil {
+			panic(err)
+		}
+
+
+		fmt.Printf("\n\n\n%v\n\n\n", string(reportsYAML))
+		fmt.Printf("\n\n\n%v\n\n\n", string(reportsJSON))
+
+	*/
+
+	/*
+
+	   Initial Status
+
+	   expt   required streams   supplied streams   jump  healthy  available   comment
+	   test00 data               -                  ok    no       no          no streams
+	   test01 data               data               no    no       yes         required stream ok
+	   test02 data               video              ok    no       no          incorrect stream
+	   test03 data               data video         ok    yes      yes         correct stream plus additional not in manifest that is ok
+	   test04 data video         data               ok    no       no          missing a required stream
+	   test05 data video         data video         ok    yes      yes         all required streams present
+	   test06 N/A                data video(Never)  ok    no       no          only one of the supplied streams is ok, the other never worked
+	   test07 N/A                data video(30s)    ok    no       no          only one of the supplied streams is ok, the other has stopped
+
+	*/
+
+	// prepare reports
+	// send reports
+	// check no health events yet
+	// wait for just longer than health_startup
+	// resend reports
+	// check initial health events are accurate
+	// check errors are correct
+	// check email is correctly sent
+
+	/* Second status
+
+	    advance time by an hour
+
+		test04 gains video stream, becomes ok
+		test05 loses data stream, becomes unhealthy
+
+		email should
+		report test04 ok, test05 issues
+
+		include test00, test01, test05, test06, test07 in list of all issues
+
+	*/
 }

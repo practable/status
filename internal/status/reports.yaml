@@ -1,0 +1,490 @@
+---
+jump:
+  set00:
+    description: initial set with all experiments in expected connection condition (all but test02, connected) but with some showing never or long last which should be ignored because last transmission does not matter for jump like it does for streams
+    reports:
+      - topic: test00
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:00:00+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.100"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 100ms
+            Size: 1000
+            FPS: 25
+            Never: false
+      - topic: test02
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:00:00+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.102"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 30s
+            Size: 1000
+            FPS: 25
+            Never: false  
+      - topic: test03
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:00:00+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.103"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 1h
+            Size: 1000
+            FPS: 25
+            Never: true
+      - topic: test04
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:00:00+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.104"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 1h
+            Size: 1000
+            FPS: 25
+            Never: false
+      - topic: test05
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:00:00+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.105"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 2s
+            Size: 1000
+            FPS: 25
+            Never: false
+      - topic: test65
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:00:00+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.106"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 2s
+            Size: 1000
+            FPS: 25
+            Never: false
+      - topic: test07
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:00:00+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.107"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 2s
+            Size: 1000
+            FPS: 25
+            Never: false         
+  set01:
+    description: 90sec after set00, intended to be after the setup delay, still missing test01
+    reports:
+      - topic: test00
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:01:30+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.100"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 100ms
+            Size: 1000
+            FPS: 25
+            Never: false
+      - topic: test02
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:01:30+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.101"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 100ms
+            Size: 1000
+            FPS: 25
+            Never: false
+      - topic: test03
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:01:30+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.103"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 1h
+            Size: 1000
+            FPS: 25
+            Never: true
+      - topic: test04
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:01:30+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.104"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 1h
+            Size: 1000
+            FPS: 25
+            Never: false
+      - topic: test05
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:01:30+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.105"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 2s
+            Size: 1000
+            FPS: 25
+            Never: false
+      - topic: test06
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:01:30+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.106"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 2s
+            Size: 1000
+            FPS: 25
+            Never: false
+      - topic: test07
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:01:30+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.107"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 2s
+            Size: 1000
+            FPS: 25
+            Never: false 
+  set02:
+    description: another experiment drops off (do we keep test01 in the list of issues?), another minute later
+    reports:
+      - topic: test00
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:01:40+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.100"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 100ms
+            Size: 1000
+            FPS: 25
+            Never: false
+      - topic: test03
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:01:40+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.103"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 1h
+            Size: 1000
+            FPS: 25
+            Never: true
+      - topic: test04
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:01:40+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.104"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 1h
+            Size: 1000
+            FPS: 25
+            Never: false
+      - topic: test05
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:01:40+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.105"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 2s
+            Size: 1000
+            FPS: 25
+            Never: false
+      - topic: test06
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:01:40+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.106"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 2s
+            Size: 1000
+            FPS: 25
+            Never: false
+      - topic: test07
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:01:40+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.107"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 2s
+            Size: 1000
+            FPS: 25
+            Never: false
+  set03:
+    description: all jump experiments are are back
+    reports:
+      - topic: test00
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:01:50+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.100"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 100ms
+            Size: 1000
+            FPS: 25
+            Never: false
+      - topic: test01
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:01:50+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.101"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 30s
+            Size: 1000
+            FPS: 25
+            Never: false
+      - topic: test02
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:01:50+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.102"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 1h
+            Size: 1000
+            FPS: 25
+            Never: true            
+      - topic: test03
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:01:50+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.103"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 1h
+            Size: 1000
+            FPS: 25
+            Never: true
+      - topic: test04
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:01:50+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.104"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 2s
+            Size: 1000
+            FPS: 25
+            Never: false
+      - topic: test05
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:01:50+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.105"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 2s
+            Size: 1000
+            FPS: 25
+            Never: false   
+      - topic: test06
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:01:50+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.101"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 2s
+            Size: 1000
+            FPS: 25
+            Never: false
+      - topic: test07
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:01:50+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        RemoteAddr: "123.123.1.101"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - host
+        stats:
+          Tx:
+            Last: 2s
+            Size: 1000
+            FPS: 25
+            Never: false             
