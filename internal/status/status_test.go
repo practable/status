@@ -344,12 +344,13 @@ func TestAllOK(t *testing.T) {
 	assert.NoError(t, err)
 
 	var jr []jc.Report
-	//var rr []rc.Report
+	var rr []rc.Report
 
 	jr = reports.Jump["set00"].Reports
+	rr = reports.Relay["set00"].Reports
 
 	fmt.Printf("\n\n%v\n\n", jr)
-
+	fmt.Printf("\n\n%v\n\n", rr)
 	/*
 
 
@@ -367,17 +368,18 @@ func TestAllOK(t *testing.T) {
 
 	/*
 
-	   Initial Status
+			   Initial Status
 
-	   expt   required streams   supplied streams   jump  healthy  available   comment
-	   test00 data               -                  ok    no       no          no streams
-	   test01 data               data               no    no       yes         required stream ok
-	   test02 data               video              ok    no       no          incorrect stream
-	   test03 data               data video         ok    yes      yes         correct stream plus additional not in manifest that is ok
-	   test04 data video         data               ok    no       no          missing a required stream
-	   test05 data video         data video         ok    yes      yes         all required streams present
-	   test06 N/A                data video(Never)  ok    no       no          only one of the supplied streams is ok, the other never worked
-	   test07 N/A                data video(30s)    ok    no       no          only one of the supplied streams is ok, the other has stopped
+			   expt   required streams   supplied streams   jump  healthy  available   comment
+			   test00 data               -                  ok    no       no          no streams
+			   test01 data               data               no    no       yes         required stream ok
+			   test02 data               video              ok    no       no          stream ok but not the required on
+			   test03 data               data video         ok    yes      yes         correct stream plus additional not in manifest that is ok
+			   test04 data video         data               ok    no       no          missing required video stream, data stream healthy. Client connection to video stream must not cause healthy to be true
+			   test05 data video         data video         ok    yes      yes         all required streams present
+			   test06 N/A                data video(Never)  ok    no       no          only one of the supplied streams is ok, the other never worked
+			   test07 N/A                data video(3m)     ok    no       no          only one of the supplied streams is ok, the other has stopped
+		       test08 N/A                none      client-only    n/a      n/a        should be ignored, and not appear in statistics on experiments
 
 	*/
 
