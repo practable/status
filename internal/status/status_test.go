@@ -17,6 +17,8 @@ import (
 	smtpmock "github.com/mocktools/go-smtp-mock/v2"
 	"github.com/phayes/freeport"
 	"github.com/practable/book/pkg/book"
+	jc "github.com/practable/jump/pkg/status"
+	rc "github.com/practable/relay/pkg/status"
 	"github.com/practable/status/internal/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -234,7 +236,7 @@ func setNow(s *config.Status, now time.Time) {
 	s.SetNow(func() time.Time { return now })
 }
 func init() {
-	debug = false
+	debug = true
 	if debug {
 		log.SetReportCaller(true)
 		log.SetLevel(log.DebugLevel)
@@ -280,8 +282,8 @@ func TestMain(m *testing.M) {
 	portSMTP := ports[4]
 
 	hostBook := "[::]:" + strconv.Itoa(portBook)
-	//hostJump := "[::]:" + strconv.Itoa(portJump)
-	//hostRelay := "[::]:" + strconv.Itoa(portRelay)
+	hostJump := "[::]:" + strconv.Itoa(portJump)
+	hostRelay := "[::]:" + strconv.Itoa(portRelay)
 	hostSMTP := "[::]:" + strconv.Itoa(portSMTP)
 
 	schemeBook := "http"
@@ -317,21 +319,31 @@ func TestMain(m *testing.M) {
 	}
 	bookAdminAuth = httptransport.APIKeyAuth("Authorization", "header", bookAdminToken)
 
-	/***************************
-	*  start dummy jump and relay
-	****************************/
+	/***************************************************************************/
+	// start dummy jump and relay in an elegant way
+	// don't respond to access request until after tests finish,
+	//  meanwhile we can mock responses using the channel in the stats clients
+	/***************************************************************************/
 
 	idleConnsClosedJump := make(chan struct{})
 	idleConnsClosedRelay := make(chan struct{})
 	shutdownMockServers := make(chan struct{})
 
+	jmux := http.NewServeMux()
+	jmux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		<-shutdownMockServers
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	})
+	jhost := ":" + strconv.Itoa(portJump)
+
 	jsrv := http.Server{
-		Addr: ":" + strconv.Itoa(portJump),
+		Addr:    jhost,
+		Handler: jmux,
 	}
 
 	go func() {
 		if err := jsrv.ListenAndServe(); err != http.ErrServerClosed {
-			log.Fatalf("HTTP relay server ListenAndServe: %v", err)
+			log.Fatalf("HTTP jumpserver ListenAndServe: %v", err)
 		}
 	}()
 
@@ -344,9 +356,18 @@ func TestMain(m *testing.M) {
 		close(idleConnsClosedJump)
 	}()
 
+	rmux := http.NewServeMux()
+	rmux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		<-shutdownMockServers
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	})
+	rhost := ":" + strconv.Itoa(portRelay)
+
 	rsrv := http.Server{
-		Addr: ":" + strconv.Itoa(portRelay),
+		Addr:    rhost,
+		Handler: rmux,
 	}
+
 	go func() {
 		if err := rsrv.ListenAndServe(); err != http.ErrServerClosed {
 			log.Fatalf("HTTP relay server ListenAndServe: %v", err)
@@ -398,6 +419,8 @@ func TestMain(m *testing.M) {
 		HealthLogEvery:      time.Duration(1 * time.Second),
 		HealthStartup:       time.Duration(1 * time.Second),
 		HostBook:            hostBook,
+		HostJump:            hostJump,
+		HostRelay:           hostRelay,
 		Port:                portServe,
 		QueryBookEvery:      time.Duration(1 * time.Second),
 		ReconnectJumpEvery:  time.Duration(1 * time.Hour),
@@ -411,6 +434,12 @@ func TestMain(m *testing.M) {
 		SendEmail:           true,
 		TimeoutBook:         time.Minute,
 	}
+
+	// supply jump and relay clients so we can mock messages
+
+	j := jc.New()
+	r := rc.New()
+	go Run(ctx, j, r, s) //doesn't include the API server
 
 	time.Sleep(time.Second) //let status start
 
