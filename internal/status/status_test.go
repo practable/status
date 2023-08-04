@@ -112,6 +112,13 @@ func TestMain(m *testing.M) {
 	hostRelay := "[::]:" + strconv.Itoa(portRelay)
 	hostSMTP := "[::]:" + strconv.Itoa(portSMTP)
 
+	if debug {
+		fmt.Printf("book: %s\n", hostBook)
+		fmt.Printf("jump: %s\n", hostJump)
+		fmt.Printf("relay: %s\n", hostRelay)
+		fmt.Printf("SMTP: %s\n", hostSMTP)
+	}
+
 	schemeBook := "http"
 	schemeJump := "http"
 	schemeRelay := "http"
@@ -376,6 +383,61 @@ func TestAllOK(t *testing.T) {
 	j.Status <- jr
 	r.Status <- rr
 
+	time.Sleep(100 * time.Millisecond)
+
+	if debug {
+
+		fmt.Printf("\n\nSET00\n%+v\n\n\n", s.Experiments)
+	}
+
+	setNow(time.Date(2022, 11, 5, 0, 2, 0, 0, time.UTC))
+
+	jr = reports.Jump["set01"].Reports
+	rr = reports.Relay["set01"].Reports
+
+	j.Status <- jr
+	r.Status <- rr
+
+	time.Sleep(100 * time.Millisecond)
+
+	if debug {
+
+		fmt.Printf("\n\nSET01\n%+v\n\n\n", s.Experiments)
+	}
+
+	setNow(time.Date(2022, 11, 5, 0, 3, 0, 0, time.UTC))
+
+	jr = reports.Jump["set02"].Reports
+	rr = reports.Relay["set02"].Reports
+
+	j.Status <- jr
+	r.Status <- rr
+
+	time.Sleep(100 * time.Millisecond)
+
+	if debug {
+
+		fmt.Printf("\n\nSET02\n%+v\n\n\n", s.Experiments)
+	}
+
+	setNow(time.Date(2022, 11, 5, 0, 4, 0, 0, time.UTC))
+
+	jr = reports.Jump["set03"].Reports
+	rr = reports.Relay["set03"].Reports
+
+	j.Status <- jr
+	r.Status <- rr
+
+	time.Sleep(time.Second)
+
+	if debug {
+
+		fmt.Printf("\n\nSET03\n%+v\n\n\n", s.Experiments)
+	}
+
+	setNow(time.Date(2022, 11, 5, 0, 5, 0, 0, time.UTC))
+
+	time.Sleep(100 * time.Millisecond)
 	// prepare reports
 	// send reports
 	// check no health events yet
