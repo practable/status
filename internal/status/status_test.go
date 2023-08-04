@@ -12,7 +12,6 @@ import (
 	"time"
 
 	rt "github.com/go-openapi/runtime"
-	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/golang-jwt/jwt"
 	smtpmock "github.com/mocktools/go-smtp-mock/v2"
 	"github.com/phayes/freeport"
@@ -317,7 +316,25 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		panic(err)
 	}
-	bookAdminAuth = httptransport.APIKeyAuth("Authorization", "header", bookAdminToken)
+
+	time.Sleep(time.Second) //let book start!
+
+	// upload manifest
+	client := &http.Client{}
+	bodyReader := bytes.NewReader(manifestJSON)
+	req, err := http.NewRequest("PUT", schemeBook+"://"+hostBook+"/api/v1/admin/manifest", bodyReader)
+	if err != nil {
+		panic(err)
+	}
+	req.Header.Add("Authorization", bookAdminToken)
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	if resp.StatusCode != 200 {
+		log.Fatal("Book manifest did not load")
+	}
 
 	/***************************************************************************/
 	// start dummy jump and relay in an elegant way
