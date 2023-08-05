@@ -1,0 +1,34 @@
+---
+r-test00:
+  description: d-r-test00
+  streams:
+    - st-data
+  topic_stub: test00
+r-test01:
+  description: d-r-test01
+  streams:
+    - st-data
+  topic_stub: test01
+r-test02:
+  description: d-r-test02
+  streams:
+    - st-data
+    - st-video
+  topic_stub: test02
+r-test03:
+  description: d-r-test03
+  streams:
+    - st-data
+  topic_stub: test03
+r-test04:
+  description: d-r-test04
+  streams:
+    - st-data
+    - st-video
+  topic_stub: test04
+r-test05:
+  description: d-r-test05
+  streams:
+    - st-data
+    - st-video
+  topic_stub: test05

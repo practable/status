@@ -4,17 +4,18 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
 	"strconv"
 	"testing"
 	"time"
 
 	rt "github.com/go-openapi/runtime"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/gorilla/mux"
 	smtpmock "github.com/mocktools/go-smtp-mock/v2"
 	"github.com/phayes/freeport"
 	bc "github.com/practable/book/pkg/resource"
@@ -31,8 +32,8 @@ var ct time.Time
 var ctp *time.Time
 var debug bool
 var j *jc.Status
-var manifestYAML []byte
-var manifestJSON []byte
+var resourcesYAML []byte
+var resourcesJSON []byte
 var r *rc.Status
 var s *config.Status
 var SMTPServer *smtpmock.Server
@@ -76,15 +77,15 @@ func init() {
 	// create JSON versions of the manifests
 	var err error
 
-	manifestYAML, err = ioutil.ReadFile("manifest.yaml")
+	resourcesYAML, err = ioutil.ReadFile("resources.yaml")
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)
 		panic(err)
 	}
 
-	manifestJSON, err = yaml.YAMLToJSON(manifestYAML)
-
+	resourcesJSON, err = yaml.YAMLToJSON(resourcesYAML)
 	if err != nil {
+		log.Printf("yaml.YAMLToJSON resources err   #%v ", err)
 		panic(err)
 	}
 
@@ -137,36 +138,101 @@ func TestMain(m *testing.M) {
 	// so that we can set it from the current time
 	jwt.TimeFunc = func() time.Time { return *ctp }
 
-	/***************************
-	*  configure & start book
-	****************************/
+	/***************************************
+	*  start mock book and load manifest
+	**************************************/
 
-	// cannot run book from pkg/book because the jwt middle layer for
+	// Need a mock because
+	// 0. cannot run book from pkg/book because the jwt middle layer for
 	// status and book collide, and use the host value of the last started
 	// service, in this case book rejects with "token aud does not match this host"
 	// and instead wants the host that status has. This cannot really be solved
-	// by tweaking the jwt library because we need both to use jwt/v4
-	// so we start book from commmand line
-	// this means book must have current system time.
-	// we just have to sort tokens accordingly
+	// by tweaking the jwt library because we need both to use latest jwt/v4
+	// 1. Starting book from the command line does not translate well to github actions
+	// and would have different system time (time issue not a dealbreaker)
 
-	/*
-		bookConfig := book.DefaultConfig()
-		bookConfig.Port = portBook
-		bookConfig.StoreSecret = secretBook
-		bookConfig.RelaySecret = secretRelay
-		bookConfig.Now = func() time.Time { return *ctp }
+	// Auth? Skip for now, add if we encounter many PR that cause issues with auth
+	// that we don't detect until integration testing.
 
-		go book.Run(ctx, bookConfig)
-		time.Sleep(500 * time.Millisecond) //let book start! (100ms is too soon)
-	*/
+	shutdownMockServers := make(chan struct{})
+	idleConnsClosedBook := make(chan struct{})
+	bmux := mux.NewRouter() //for path params //http.NewServeMux()
+	bhost := ":" + strconv.Itoa(portBook)
 
-	cmd := exec.Command("./install.sh")
-	err := cmd.Run()
-	if err != nil {
-		panic(err)
+	bam := make(map[string]bc.Status) //availability map for resources in the mock book
+
+	bmux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	})
+	bmux.HandleFunc("/api/v1/admin/resources", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, string(resourcesJSON))
+	}).Methods("GET")
+
+	bmux.HandleFunc("/api/v1/admin/resources/{name}", func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		name, ok := vars["name"]
+		if !ok {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+		status, ok := bam[name]
+		if !ok {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+
+		resp, err := json.Marshal(status)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, string(resp))
+	}).Methods("GET")
+
+	bmux.HandleFunc("/api/v1/admin/resources/{name}", func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		name, ok := vars["name"]
+		if !ok {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+
+		availableStr := r.URL.Query().Get("available")
+		reason := r.URL.Query().Get("reason")
+		available, err := strconv.ParseBool(availableStr)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+
+		bam[name] = bc.Status{
+			Available: available,
+			Reason:    reason,
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}).Methods("PUT")
+
+	bsrv := http.Server{
+		Addr:    bhost,
+		Handler: bmux,
 	}
-	cmd := exec.Command("./book.sh")
+
+	go func() {
+		if err := bsrv.ListenAndServe(); err != http.ErrServerClosed {
+			log.Fatalf("HTTP mock book server ListenAndServe: %v", err)
+		}
+	}()
+
+	go func() {
+		<-shutdownMockServers
+		if err := bsrv.Shutdown(ctx); err != nil {
+			// Error from closing listeners, or context timeout:
+			log.Printf("HTTP mock book server Shutdown: %v", err)
+		}
+		close(idleConnsClosedBook)
+	}()
 
 	/***************************************************************************/
 	// start dummy jump and relay in an elegant way
@@ -176,7 +242,6 @@ func TestMain(m *testing.M) {
 
 	idleConnsClosedJump := make(chan struct{})
 	idleConnsClosedRelay := make(chan struct{})
-	shutdownMockServers := make(chan struct{})
 
 	jmux := http.NewServeMux()
 	jmux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -286,41 +351,6 @@ func TestMain(m *testing.M) {
 		TimeoutBook:         time.Minute,
 	}
 	s.Now = func() time.Time { return *ctp }
-
-	/***************************
-	*  upload load manifest (uses status config info)
-	****************************/
-
-	audience := s.Config.SchemeBook + "://" + s.Config.HostBook + s.Config.BasepathBook
-	subject := "status-server"
-	secret := s.Config.SecretBook
-	scopes := []string{"booking:admin"}
-
-	iat := s.Now()
-	nbf := s.Now().Add(-1 * time.Second)
-	exp := s.Now().Add(time.Minute)
-
-	bookAdminToken, err := bc.NewToken(audience, subject, secret, scopes, iat, nbf, exp)
-	log.Infof("book token for %s: %s", audience, string(bookAdminToken))
-	// upload manifest
-	client := &http.Client{}
-	bodyReader := bytes.NewReader(manifestJSON)
-
-	req, err := http.NewRequest("PUT", schemeBook+"://"+hostBook+"/api/v1/admin/manifest", bodyReader)
-	if err != nil {
-		panic(err)
-	}
-	req.Header.Add("Authorization", bookAdminToken)
-	req.Header.Add("Content-Type", "application/json")
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	if resp.StatusCode != 200 {
-		log.Fatalf("Book manifest did not load %v", resp)
-		fmt.Printf("\n\n%v\n\n", string(manifestJSON))
-
-	}
 
 	/***************************
 	*  Start status server
