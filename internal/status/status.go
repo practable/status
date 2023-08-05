@@ -417,15 +417,41 @@ func updateHealth(s *config.Status) {
 		systemAlerts = append(systemAlerts, msg)
 	}
 
+	// check for inactive streams
+
+	streamsActive := make(map[string]map[string]bool)
+
+	for k, v := range s.Experiments {
+
+		sm := v.StreamOK
+
+		for sk := range v.StreamOK {
+			recent := (v.StreamReports[sk].Stats.Tx.Last < s.Config.HealthLastActive)
+			never := v.StreamReports[sk].Stats.Tx.Never
+			sm[sk] = recent && !never
+		}
+
+		streamsActive[k] = sm
+
+	}
+
 	// update experiments that are showing stale checks
 	for k, v := range jumpStale {
 
 		expt := s.Experiments[k]
 
-		es := expt.StreamOK
+		expt.JumpOK = !v //v is inverted
 
-		for sk := range es {
-			expt.StreamOK[sk] = !v // v is true if stale, so invert
+		s.Experiments[k] = expt
+
+	}
+
+	for k, v := range streamsActive {
+
+		expt := s.Experiments[k]
+
+		for sk, vv := range v {
+			expt.StreamOK[sk] = vv
 		}
 		s.Experiments[k] = expt
 	}
@@ -434,10 +460,13 @@ func updateHealth(s *config.Status) {
 
 		expt := s.Experiments[k]
 
-		expt.JumpOK = !v //v is true if stale, so invert
+		es := expt.StreamOK
+
+		for sk := range es {
+			expt.StreamOK[sk] = expt.StreamOK[sk] && !v // must be active and NOT stale (!v)
+		}
 
 		s.Experiments[k] = expt
-
 	}
 
 	// check for issues
@@ -681,19 +710,28 @@ func EmailBody(s *config.Status, alerts map[string]bool, systemAlerts []string) 
 	msg += "There are " + count + " new health events (" +
 		strconv.Itoa(len(amissues)) + " issues, " + strconv.Itoa(len(amok)) + " ok): \r\n"
 
+	cav := " -- A   "
+	cun := " ><   U "
+	cok := " ok A   " //🆗
+
 	for _, k := range amissues {
 
 		v := alerts[k]
 
 		if v {
-			msg += k + " ok\r\n" //" 🆗\r\n"
+			msg += k + cok + "\r\n"
 		} else {
+
+			code := cun
+			if s.Experiments[k].Available {
+				code = cav
+			}
 			he := s.Experiments[k].HealthEvents
 			issues := "[unknown]"
 			if len(he) > 0 {
 				issues = "[" + strings.Join(he[len(he)-1].Issues, ", ") + "]"
 			}
-			msg += k + " -- " + issues + "\r\n"
+			msg += k + code + issues + "\r\n"
 		}
 
 	}
@@ -703,14 +741,19 @@ func EmailBody(s *config.Status, alerts map[string]bool, systemAlerts []string) 
 		v := alerts[k]
 
 		if v {
-			msg += k + " ok\r\n" //" 🆗\r\n"
+			msg += k + cok + "\r\n"
 		} else {
+
+			code := cun
+			if s.Experiments[k].Available {
+				code = cav
+			}
 			he := s.Experiments[k].HealthEvents
 			issues := "[unknown]"
 			if len(he) > 0 {
 				issues = "[" + strings.Join(he[len(he)-1].Issues, ", ") + "]"
 			}
-			msg += k + " -- " + issues + "\r\n"
+			msg += k + code + issues + "\r\n"
 		}
 
 	}
@@ -732,12 +775,16 @@ func EmailBody(s *config.Status, alerts map[string]bool, systemAlerts []string) 
 		v := s.Experiments[k]
 
 		if !v.Healthy {
+			code := cun
+			if s.Experiments[k].Available {
+				code = cav
+			}
 			he := v.HealthEvents
 			issues := "[unknown]"
 			if len(he) > 0 {
 				issues = "[" + strings.Join(he[len(he)-1].Issues, ", ") + "]"
 			}
-			msg += k + " -- " + issues + "\r\n"
+			msg += k + code + issues + "\r\n"
 		}
 	}
 

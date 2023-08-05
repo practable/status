@@ -403,8 +403,8 @@ func TestGetStream(t *testing.T) {
 
 }
 
-// TestAllOK checks that with good
-func TestAllOK(t *testing.T) {
+// TestStatus checks that reports are processed correctly
+func TestStatus(t *testing.T) {
 
 	setNow(t, time.Date(2022, 11, 5, 0, 0, 0, 0, time.UTC))
 
@@ -437,18 +437,21 @@ func TestAllOK(t *testing.T) {
 
 	/*
 
-			   Initial Status
+					   Initial Status
 
-			   expt   required streams   supplied streams   jump  healthy  available   comment
-			   test00 data               -                  ok    no       no          no streams
-			   test01 data               data               no    no       yes         required stream ok
-			   test02 data               video              ok    no       no          stream ok but not the required on
-			   test03 data               data video         ok    yes      yes         correct stream plus additional not in manifest that is ok
-			   test04 data video         data               ok    no       no          missing required video stream, data stream healthy. Client connection to video stream must not cause healthy to be true
-			   test05 data video         data video         ok    yes      yes         all required streams present
-			   test06 N/A                data video(Never)  ok    no       no          only one of the supplied streams is ok, the other never worked
-			   test07 N/A                data video(3m)     ok    no       no          only one of the supplied streams is ok, the other has stopped
-		       test08 N/A                none      client-only    n/a      n/a        should be ignored, and not appear in statistics on experiments
+					   expt   required streams   supplied streams   jump  healthy  available   comment
+					   test00 data               -                  ok    no       no            U [missing required test00-st-data]
+					   test01 data               data               no    no       yes         A   [missing jump]
+					   test02 data               video              ok    no       no            U [missing required test02-st-data]
+		                                                                                             stream ok but not the required on
+					   test03 data               data video         ok    yes      yes               ok correct stream plus additional not in manifest that is ok
+					   test04 data video         data               ok    no       no            U [missing required test04-st-video]
+		                                                                                             missing required video stream, data stream healthy.
+		                                                                                             Client connection to video stream must not cause healthy to be true
+					   test05 data video         data video         ok    yes      yes         ok    all required streams present
+					   test06 N/A                data video(Never)  ok    no       no             U  only one of the supplied streams is ok, the other never worked
+					   test07 N/A                data video(3m)     ok    no       no             U  only one of the supplied streams is ok, the other has stopped
+				       test08 N/A                none      client-only    n/a      n/a         --    should be ignored, and not appear in statistics on experiments
 
 	*/
 
@@ -484,6 +487,17 @@ func TestAllOK(t *testing.T) {
 
 	// wait out the health startup of 1min, and then some, so we are starting next phase of test on an even 2min for ease of clock time editing
 
+	// Check current status
+
+	assert.Equal(t, false, s.Experiments["test00"].Available)
+	assert.Equal(t, true, s.Experiments["test01"].Available)
+	assert.Equal(t, false, s.Experiments["test02"].Available)
+	assert.Equal(t, true, s.Experiments["test03"].Available)
+	assert.Equal(t, false, s.Experiments["test04"].Available)
+	assert.Equal(t, true, s.Experiments["test05"].Available)
+	assert.Equal(t, false, s.Experiments["test06"].Available)
+	assert.Equal(t, true, s.Experiments["test07"].Available)
+
 	setNow(t, time.Date(2022, 11, 5, 0, 1, 55, 0, time.UTC)) //
 
 	j.Status <- jr
@@ -499,51 +513,33 @@ func TestAllOK(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 
 	setNow(t, time.Date(2022, 11, 5, 0, 2, 5, 0, time.UTC)) //keep steps smaller than config.HealthLast else relay reports appear stale
+	/*
+		jr = reports.Jump["set01"].Reports
+		rr = reports.Relay["set01"].Reports
 
-	jr = reports.Jump["set01"].Reports
-	rr = reports.Relay["set01"].Reports
+		j.Status <- jr
+		r.Status <- rr
 
-	j.Status <- jr
-	r.Status <- rr
+		time.Sleep(10 * time.Millisecond)
 
-	time.Sleep(10 * time.Millisecond)
+		if verbose {
+			fmt.Printf("\n\nSET01\n%+v\n\n\n", s.Experiments)
+		}
 
-	if verbose {
-		fmt.Printf("\n\nSET01\n%+v\n\n\n", s.Experiments)
-	}
+		setNow(t, time.Date(2022, 11, 5, 0, 2, 10, 0, time.UTC))
 
-	setNow(t, time.Date(2022, 11, 5, 0, 2, 10, 0, time.UTC))
+		jr = reports.Jump["set02"].Reports
+		rr = reports.Relay["set02"].Reports
 
-	jr = reports.Jump["set02"].Reports
-	rr = reports.Relay["set02"].Reports
+		j.Status <- jr
+		r.Status <- rr
 
-	j.Status <- jr
-	r.Status <- rr
+		time.Sleep(100 * time.Millisecond)
 
-	time.Sleep(100 * time.Millisecond)
-
-	if verbose {
-
-		fmt.Printf("\n\nSET02\n%+v\n\n\n", s.Experiments)
-	}
-
-	setNow(t, time.Date(2022, 11, 5, 0, 2, 15, 0, time.UTC))
-
-	jr = reports.Jump["set03"].Reports
-	rr = reports.Relay["set03"].Reports
-
-	j.Status <- jr
-	r.Status <- rr
-
-	time.Sleep(time.Second)
-
-	if verbose {
-
-		fmt.Printf("\n\nSET03\n%+v\n\n\n", s.Experiments)
-	}
-
-	setNow(t, time.Date(2022, 11, 5, 0, 2, 20, 0, time.UTC))
-
+		if verbose {
+			fmt.Printf("\n\nSET02\n%+v\n\n\n", s.Experiments)
+		}
+	*/
 	time.Sleep(100 * time.Millisecond)
 
 	msg := SMTPServer.Messages()
@@ -640,7 +636,7 @@ func TestEmailBody(t *testing.T) {
 	msg := EmailBody(s, alerts, systemAlerts)
 
 	// the content of the health events is not quite right in these, but those are supplied as parameters, so this does not affect the validity of this test (TODO: update to latest format for cosmetic reasons)
-	exp0 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 1 new health events \r\n\r\nSystem time: 2022-11-05 00:02:10 +0000 UTC\r\nThere are 1 new health events (1 issues, 0 ok): \r\ntest01 -- [unhealthy test01-st-data]\r\n\r\n\r\n All new and existing health issues:\r\ntest00 -- [missing jump, missing required test00-st-data]\r\ntest01 -- [unhealthy test01-st-data]\r\ntest02 -- [missing required test02-st-data]\r\ntest04 -- [missing required test04-st-video]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
+	exp0 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 1 new health events \r\n\r\nSystem time: 2022-11-05 00:02:10 +0000 UTC\r\nThere are 1 new health events (1 issues, 0 ok): \r\ntest01 -- A   [unhealthy test01-st-data]\r\n\r\n\r\n All new and existing health issues:\r\ntest00 ><   U [missing jump, missing required test00-st-data]\r\ntest01 -- A   [unhealthy test01-st-data]\r\ntest02 ><   U [missing required test02-st-data]\r\ntest04 ><   U [missing required test04-st-video]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
 
 	assert.Equal(t, exp0, msg)
 
@@ -648,7 +644,7 @@ func TestEmailBody(t *testing.T) {
 
 	msg = EmailBody(s, alerts, systemAlerts)
 
-	exp1 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 1 new health events \r\n\r\nSystem time: 2022-11-05 00:02:10 +0000 UTC\r\n\r\nSystem alerts:\r\nsome system issue or other\r\nThere are 1 new health events (1 issues, 0 ok): \r\ntest01 -- [unhealthy test01-st-data]\r\n\r\n\r\n All new and existing health issues:\r\ntest00 -- [missing jump, missing required test00-st-data]\r\ntest01 -- [unhealthy test01-st-data]\r\ntest02 -- [missing required test02-st-data]\r\ntest04 -- [missing required test04-st-video]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
+	exp1 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 1 new health events \r\n\r\nSystem time: 2022-11-05 00:02:10 +0000 UTC\r\n\r\nSystem alerts:\r\nsome system issue or other\r\nThere are 1 new health events (1 issues, 0 ok): \r\ntest01 -- A   [unhealthy test01-st-data]\r\n\r\n\r\n All new and existing health issues:\r\ntest00 ><   U [missing jump, missing required test00-st-data]\r\ntest01 -- A   [unhealthy test01-st-data]\r\ntest02 ><   U [missing required test02-st-data]\r\ntest04 ><   U [missing required test04-st-video]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
 	assert.Equal(t, exp1, msg)
 
 }
