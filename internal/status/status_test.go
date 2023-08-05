@@ -500,7 +500,7 @@ func TestAllOK(t *testing.T) {
 
 	*/
 
-	if true { //used to generate contents for experiments.json, used by TestEmailBody
+	if false { //used to generate contents for experiments.json, used by TestEmailBody
 		sj, err := yaml.Marshal(s.Experiments)
 		assert.NoError(t, err)
 		err = ioutil.WriteFile("experiments.yaml", sj, 0644)
@@ -546,7 +546,8 @@ func TestEmailBody(t *testing.T) {
 
 	msg := EmailBody(s, alerts, systemAlerts)
 
-	exp0 := ""
+	// the content of the health events is not quite right in these, but those are supplied as parameters, so this does not affect the validity of this test (TODO: update to latest format for cosmetic reasons)
+	exp0 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 1 new health events \r\n\r\nSystem time: 2022-11-05 00:02:10 +0000 UTC\r\nThere are 1 new health events (1 issues, 0 ok): \r\ntest01 -- [jump present but not ok,jump missing]\r\n\r\n\r\n All new and existing health issues:\r\ntest00 -- [no current streams]\r\ntest01 -- [jump present but not ok,jump missing]\r\ntest07 -- [stream unhealthy (test07-st-video)]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
 
 	assert.Equal(t, exp0, msg)
 
@@ -554,7 +555,7 @@ func TestEmailBody(t *testing.T) {
 
 	msg = EmailBody(s, alerts, systemAlerts)
 
-	exp1 := ""
+	exp1 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 1 new health events \r\n\r\nSystem time: 2022-11-05 00:02:10 +0000 UTC\r\n\r\nSystem alerts:\r\nsome system issue or other\r\nThere are 1 new health events (1 issues, 0 ok): \r\ntest01 -- [jump present but not ok,jump missing]\r\n\r\n\r\n All new and existing health issues:\r\ntest00 -- [no current streams]\r\ntest01 -- [jump present but not ok,jump missing]\r\ntest07 -- [stream unhealthy (test07-st-video)]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
 
 	assert.Equal(t, exp1, msg)
 
