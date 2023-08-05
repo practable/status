@@ -458,7 +458,7 @@ func updateHealth(s *config.Status) {
 		if !v.JumpOK {
 			h = false //no jump is unhealthy BUT
 			// don't change availability based on jump, leave a true for now
-			issues = append(issues, "jump")
+			issues = append(issues, "missing jump")
 		}
 
 		// all required streams must be present
@@ -568,13 +568,21 @@ func updateHealth(s *config.Status) {
 
 			if r.Available != v {
 
+				if r.ResourceName == "" {
+					log.Infof("changeAvailability skipping setting availability for %s because no ResourceName (probably not in manifest)", k)
+					continue
+				}
+
 				//change on book server
-				err := c.SetResourceAvailability(r.ResourceName, v, "status server: "+s.Now().String())
+				reason := "status server: " + s.Now().String()
+				err := c.SetResourceAvailability(r.ResourceName, v, reason)
 
 				if err != nil {
 					log.Errorf("changeAvailability error setting availability for %s(%s) was %s", k, r.ResourceName, err.Error())
 					continue
 				}
+
+				log.WithFields(log.Fields{"experiment": k, "resourceName": r.ResourceName, "available": v, "reason": reason}).Infof("changeAvailability set availability of %s to %t)", k, v)
 
 				// check change, and update status
 				status, err := c.GetResourceAvailability(r.ResourceName)
@@ -590,6 +598,8 @@ func updateHealth(s *config.Status) {
 				}
 
 			}
+
+			expt[k] = r //record the availability of the resource
 		}
 
 	}
@@ -681,7 +691,7 @@ func EmailBody(s *config.Status, alerts map[string]bool, systemAlerts []string) 
 			he := s.Experiments[k].HealthEvents
 			issues := "[unknown]"
 			if len(he) > 0 {
-				issues = "[" + strings.Join(he[len(he)-1].Issues, ",") + "]"
+				issues = "[" + strings.Join(he[len(he)-1].Issues, ", ") + "]"
 			}
 			msg += k + " -- " + issues + "\r\n"
 		}
@@ -698,7 +708,7 @@ func EmailBody(s *config.Status, alerts map[string]bool, systemAlerts []string) 
 			he := s.Experiments[k].HealthEvents
 			issues := "[unknown]"
 			if len(he) > 0 {
-				issues = "[" + strings.Join(he[len(he)-1].Issues, ",") + "]"
+				issues = "[" + strings.Join(he[len(he)-1].Issues, ", ") + "]"
 			}
 			msg += k + " -- " + issues + "\r\n"
 		}
@@ -725,7 +735,7 @@ func EmailBody(s *config.Status, alerts map[string]bool, systemAlerts []string) 
 			he := v.HealthEvents
 			issues := "[unknown]"
 			if len(he) > 0 {
-				issues = "[" + strings.Join(he[len(he)-1].Issues, ",") + "]"
+				issues = "[" + strings.Join(he[len(he)-1].Issues, ", ") + "]"
 			}
 			msg += k + " -- " + issues + "\r\n"
 		}

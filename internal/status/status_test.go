@@ -246,7 +246,7 @@ func TestMain(m *testing.M) {
 	jmux := http.NewServeMux()
 	jmux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		<-shutdownMockServers
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		fmt.Fprintf(w, "You can safely ignore this error")
 	})
 	jhost := ":" + strconv.Itoa(portJump)
 
@@ -273,7 +273,7 @@ func TestMain(m *testing.M) {
 	rmux := http.NewServeMux()
 	rmux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		<-shutdownMockServers
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		fmt.Fprintf(w, "You can safely ignore this error")
 	})
 	rhost := ":" + strconv.Itoa(portRelay)
 
@@ -471,6 +471,17 @@ func TestAllOK(t *testing.T) {
 		fmt.Printf("\n\nSET00\n%+v\n\n\n", s.Experiments)
 	}
 
+	if false { //used to generate contents for experiments.json, used by TestEmailBody
+		s.Lock()
+		sj, err := yaml.Marshal(s.Experiments)
+		s.Unlock()
+		assert.NoError(t, err)
+		err = ioutil.WriteFile("experiments.yaml", sj, 0644)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	// wait out the health startup of 1min, and then some, so we are starting next phase of test on an even 2min for ease of clock time editing
 
 	setNow(t, time.Date(2022, 11, 5, 0, 1, 55, 0, time.UTC)) //
@@ -516,7 +527,7 @@ func TestAllOK(t *testing.T) {
 		fmt.Printf("\n\nSET02\n%+v\n\n\n", s.Experiments)
 	}
 
-	setNow(t, time.Date(2022, 11, 5, 0, 0, 15, 0, time.UTC))
+	setNow(t, time.Date(2022, 11, 5, 0, 2, 15, 0, time.UTC))
 
 	jr = reports.Jump["set03"].Reports
 	rr = reports.Relay["set03"].Reports
@@ -531,13 +542,41 @@ func TestAllOK(t *testing.T) {
 		fmt.Printf("\n\nSET03\n%+v\n\n\n", s.Experiments)
 	}
 
-	setNow(t, time.Date(2022, 11, 5, 0, 0, 20, 0, time.UTC))
+	setNow(t, time.Date(2022, 11, 5, 0, 2, 20, 0, time.UTC))
 
 	time.Sleep(100 * time.Millisecond)
 
 	msg := SMTPServer.Messages()
 
 	fmt.Printf("\n\nEmails\n%+v\n\n\n", msg)
+
+	/*
+
+		Subject: test 8 new health events
+
+		System time: 2022-11-05 00:01:10 +0000 UTC
+		There are 8 new health events (4 issues, 4 ok):
+		test00 -- [missing jump, missing required test00-st-data]
+		test01 -- [unhealthy test01-st-data]
+		test02 -- [missing required test02-st-data]
+		test04 -- [missing required test04-st-video]
+		test03 ok
+		test05 ok
+		test06 ok
+		test07 ok
+
+
+		 All new and existing health issues:
+		test00 -- [missing jump,missing required test00-st-data]
+		test01 -- [unhealthy test01-st-data]
+		test02 -- [missing required test02-st-data]
+		test04 -- [missing required test04-st-video]
+
+
+
+	*/
+
+	//fmt.Printf("\n\nStatus\n%+v\n\n\n", s.Experiments)
 
 	// prepare reports
 	// send reports
@@ -562,14 +601,6 @@ func TestAllOK(t *testing.T) {
 
 	*/
 
-	if false { //used to generate contents for experiments.json, used by TestEmailBody
-		sj, err := yaml.Marshal(s.Experiments)
-		assert.NoError(t, err)
-		err = ioutil.WriteFile("experiments.yaml", sj, 0644)
-		if err != nil {
-			panic(err)
-		}
-	}
 }
 
 func TestEmailBody(t *testing.T) {
@@ -609,7 +640,7 @@ func TestEmailBody(t *testing.T) {
 	msg := EmailBody(s, alerts, systemAlerts)
 
 	// the content of the health events is not quite right in these, but those are supplied as parameters, so this does not affect the validity of this test (TODO: update to latest format for cosmetic reasons)
-	exp0 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 1 new health events \r\n\r\nSystem time: 2022-11-05 00:02:10 +0000 UTC\r\nThere are 1 new health events (1 issues, 0 ok): \r\ntest01 -- [jump present but not ok,jump missing]\r\n\r\n\r\n All new and existing health issues:\r\ntest00 -- [no current streams]\r\ntest01 -- [jump present but not ok,jump missing]\r\ntest07 -- [stream unhealthy (test07-st-video)]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
+	exp0 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 1 new health events \r\n\r\nSystem time: 2022-11-05 00:02:10 +0000 UTC\r\nThere are 1 new health events (1 issues, 0 ok): \r\ntest01 -- [unhealthy test01-st-data]\r\n\r\n\r\n All new and existing health issues:\r\ntest00 -- [missing jump, missing required test00-st-data]\r\ntest01 -- [unhealthy test01-st-data]\r\ntest02 -- [missing required test02-st-data]\r\ntest04 -- [missing required test04-st-video]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
 
 	assert.Equal(t, exp0, msg)
 
@@ -617,8 +648,7 @@ func TestEmailBody(t *testing.T) {
 
 	msg = EmailBody(s, alerts, systemAlerts)
 
-	exp1 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 1 new health events \r\n\r\nSystem time: 2022-11-05 00:02:10 +0000 UTC\r\n\r\nSystem alerts:\r\nsome system issue or other\r\nThere are 1 new health events (1 issues, 0 ok): \r\ntest01 -- [jump present but not ok,jump missing]\r\n\r\n\r\n All new and existing health issues:\r\ntest00 -- [no current streams]\r\ntest01 -- [jump present but not ok,jump missing]\r\ntest07 -- [stream unhealthy (test07-st-video)]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
-
+	exp1 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 1 new health events \r\n\r\nSystem time: 2022-11-05 00:02:10 +0000 UTC\r\n\r\nSystem alerts:\r\nsome system issue or other\r\nThere are 1 new health events (1 issues, 0 ok): \r\ntest01 -- [unhealthy test01-st-data]\r\n\r\n\r\n All new and existing health issues:\r\ntest00 -- [missing jump, missing required test00-st-data]\r\ntest01 -- [unhealthy test01-st-data]\r\ntest02 -- [missing required test02-st-data]\r\ntest04 -- [missing required test04-st-video]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
 	assert.Equal(t, exp1, msg)
 
 }

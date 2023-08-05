@@ -4,12 +4,13 @@ test00:
   HealthEvents:
   - Healthy: false
     Issues:
-    - no current streams
-    JumpOK: true
+    - missing jump
+    - missing required test00-st-data
+    JumpOK: false
     StreamOK: {}
     When: "2022-11-05T00:01:00Z"
   Healthy: false
-  JumpOK: true
+  JumpOK: false
   JumpReport:
     canRead: true
     canWrite: true
@@ -33,27 +34,27 @@ test00:
         size: 1000
     topic: test00
     userAgent: unknown user agent
-  LastCheckedJump: "2022-11-05T00:02:05Z"
+  LastCheckedJump: "2022-11-05T00:01:20Z"
   LastCheckedStreams: "0001-01-01T00:00:00Z"
-  LastFoundInManifest: "0001-01-01T00:00:00Z"
-  ResourceName: ""
+  LastFoundInManifest: "2022-11-05T00:00:00Z"
+  ResourceName: r-test00
   StreamOK: {}
   StreamReports: {}
-  StreamRequired: {}
+  StreamRequired:
+    test00-st-data: true
 test01:
-  Available: false
+  Available: true
   FirstChecked: "2022-11-05T00:00:00Z"
   HealthEvents:
   - Healthy: false
     Issues:
-    - jump present but not ok
-    - jump missing
-    JumpOK: false
+    - unhealthy test01-st-data
+    JumpOK: true
     StreamOK:
-      test01-st-data: true
+      test01-st-data: false
     When: "2022-11-05T00:01:00Z"
   Healthy: false
-  JumpOK: false
+  JumpOK: true
   JumpReport:
     canRead: false
     canWrite: false
@@ -75,11 +76,11 @@ test01:
     topic: ""
     userAgent: ""
   LastCheckedJump: "0001-01-01T00:00:00Z"
-  LastCheckedStreams: "2022-11-05T00:02:05Z"
-  LastFoundInManifest: "0001-01-01T00:00:00Z"
-  ResourceName: ""
+  LastCheckedStreams: "2022-11-05T00:01:20Z"
+  LastFoundInManifest: "2022-11-05T00:00:00Z"
+  ResourceName: r-test01
   StreamOK:
-    test01-st-data: true
+    test01-st-data: false
   StreamReports:
     test01-st-data:
       canRead: true
@@ -104,25 +105,27 @@ test01:
           size: 1000
       topic: test01-st-data
       userAgent: unknown user agent
-  StreamRequired: {}
+  StreamRequired:
+    test01-st-data: true
 test02:
   Available: false
   FirstChecked: "2022-11-05T00:00:00Z"
   HealthEvents:
-  - Healthy: true
-    Issues: []
+  - Healthy: false
+    Issues:
+    - missing required test02-st-data
     JumpOK: true
     StreamOK:
       test02-st-video: true
     When: "2022-11-05T00:01:00Z"
-  Healthy: true
+  Healthy: false
   JumpOK: true
   JumpReport:
     canRead: true
     canWrite: true
     connected: "0001-01-01T00:00:00Z"
     expiresAt: "2023-10-01T12:00:00Z"
-    remoteAddr: 123.123.1.101
+    remoteAddr: 123.123.1.102
     scopes:
     - read
     - write
@@ -135,15 +138,15 @@ test02:
         size: 0
       tx:
         fps: 25
-        last: 100000000
+        last: 30000000000
         never: false
         size: 1000
     topic: test02
     userAgent: unknown user agent
-  LastCheckedJump: "2022-11-05T00:02:05Z"
-  LastCheckedStreams: "2022-11-05T00:02:05Z"
-  LastFoundInManifest: "0001-01-01T00:00:00Z"
-  ResourceName: ""
+  LastCheckedJump: "2022-11-05T00:01:20Z"
+  LastCheckedStreams: "2022-11-05T00:01:20Z"
+  LastFoundInManifest: "2022-11-05T00:00:00Z"
+  ResourceName: r-test02
   StreamOK:
     test02-st-video: true
   StreamReports:
@@ -170,9 +173,11 @@ test02:
           size: 1000
       topic: test02-st-video
       userAgent: unknown user agent
-  StreamRequired: {}
+  StreamRequired:
+    test02-st-data: true
+    test02-st-video: true
 test03:
-  Available: false
+  Available: true
   FirstChecked: "2022-11-05T00:00:00Z"
   HealthEvents:
   - Healthy: true
@@ -207,10 +212,10 @@ test03:
         size: 1000
     topic: test03
     userAgent: unknown user agent
-  LastCheckedJump: "2022-11-05T00:02:05Z"
-  LastCheckedStreams: "2022-11-05T00:02:05Z"
-  LastFoundInManifest: "0001-01-01T00:00:00Z"
-  ResourceName: ""
+  LastCheckedJump: "2022-11-05T00:01:20Z"
+  LastCheckedStreams: "2022-11-05T00:01:20Z"
+  LastFoundInManifest: "2022-11-05T00:00:00Z"
+  ResourceName: r-test03
   StreamOK:
     test03-st-data: true
     test03-st-video: true
@@ -261,18 +266,20 @@ test03:
           size: 1000
       topic: test03-st-video
       userAgent: unknown user agent
-  StreamRequired: {}
+  StreamRequired:
+    test03-st-data: true
 test04:
   Available: false
   FirstChecked: "2022-11-05T00:00:00Z"
   HealthEvents:
-  - Healthy: true
-    Issues: []
+  - Healthy: false
+    Issues:
+    - missing required test04-st-video
     JumpOK: true
     StreamOK:
       test04-st-data: true
     When: "2022-11-05T00:01:00Z"
-  Healthy: true
+  Healthy: false
   JumpOK: true
   JumpReport:
     canRead: true
@@ -297,10 +304,10 @@ test04:
         size: 1000
     topic: test04
     userAgent: unknown user agent
-  LastCheckedJump: "2022-11-05T00:02:05Z"
-  LastCheckedStreams: "2022-11-05T00:02:05Z"
-  LastFoundInManifest: "0001-01-01T00:00:00Z"
-  ResourceName: ""
+  LastCheckedJump: "2022-11-05T00:01:20Z"
+  LastCheckedStreams: "2022-11-05T00:01:20Z"
+  LastFoundInManifest: "2022-11-05T00:00:00Z"
+  ResourceName: r-test04
   StreamOK:
     test04-st-data: true
   StreamReports:
@@ -327,9 +334,11 @@ test04:
           size: 1000
       topic: test04-st-data
       userAgent: unknown user agent
-  StreamRequired: {}
+  StreamRequired:
+    test04-st-data: true
+    test04-st-video: true
 test05:
-  Available: false
+  Available: true
   FirstChecked: "2022-11-05T00:00:00Z"
   HealthEvents:
   - Healthy: true
@@ -364,10 +373,10 @@ test05:
         size: 1000
     topic: test05
     userAgent: unknown user agent
-  LastCheckedJump: "2022-11-05T00:02:05Z"
-  LastCheckedStreams: "2022-11-05T00:02:05Z"
-  LastFoundInManifest: "0001-01-01T00:00:00Z"
-  ResourceName: ""
+  LastCheckedJump: "2022-11-05T00:01:20Z"
+  LastCheckedStreams: "2022-11-05T00:01:20Z"
+  LastFoundInManifest: "2022-11-05T00:00:00Z"
+  ResourceName: r-test05
   StreamOK:
     test05-st-data: true
     test05-st-video: true
@@ -418,7 +427,9 @@ test05:
           size: 1000
       topic: test05-st-video
       userAgent: unknown user agent
-  StreamRequired: {}
+  StreamRequired:
+    test05-st-data: true
+    test05-st-video: true
 test06:
   Available: false
   FirstChecked: "2022-11-05T00:00:00Z"
@@ -455,8 +466,8 @@ test06:
         size: 1000
     topic: test06
     userAgent: unknown user agent
-  LastCheckedJump: "2022-11-05T00:02:05Z"
-  LastCheckedStreams: "2022-11-05T00:02:05Z"
+  LastCheckedJump: "2022-11-05T00:01:20Z"
+  LastCheckedStreams: "2022-11-05T00:01:20Z"
   LastFoundInManifest: "0001-01-01T00:00:00Z"
   ResourceName: ""
   StreamOK:
@@ -514,15 +525,14 @@ test07:
   Available: false
   FirstChecked: "2022-11-05T00:00:00Z"
   HealthEvents:
-  - Healthy: false
-    Issues:
-    - stream unhealthy (test07-st-video)
+  - Healthy: true
+    Issues: []
     JumpOK: true
     StreamOK:
       test07-st-data: true
-      test07-st-video: false
+      test07-st-video: true
     When: "2022-11-05T00:01:00Z"
-  Healthy: false
+  Healthy: true
   JumpOK: true
   JumpReport:
     canRead: true
@@ -547,13 +557,13 @@ test07:
         size: 1000
     topic: test07
     userAgent: unknown user agent
-  LastCheckedJump: "2022-11-05T00:02:05Z"
-  LastCheckedStreams: "2022-11-05T00:02:05Z"
+  LastCheckedJump: "2022-11-05T00:01:20Z"
+  LastCheckedStreams: "2022-11-05T00:01:20Z"
   LastFoundInManifest: "0001-01-01T00:00:00Z"
   ResourceName: ""
   StreamOK:
     test07-st-data: true
-    test07-st-video: false
+    test07-st-video: true
   StreamReports:
     test07-st-data:
       canRead: true
