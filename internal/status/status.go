@@ -364,8 +364,14 @@ func updateHealth(s *config.Status) {
 	// check for staleness of reports
 	for k, v := range s.Experiments {
 
-		jumpStale[k] = (v.LastCheckedJump.Add(s.Config.HealthLast)).Before(now)
-		streamsStale[k] = (v.LastCheckedStreams.Add(s.Config.HealthLast)).Before(now)
+		js := (v.LastCheckedJump.Add(s.Config.HealthLast)).Before(now)
+		ss := (v.LastCheckedStreams.Add(s.Config.HealthLast)).Before(now)
+		jumpStale[k] = js
+		streamsStale[k] = ss
+
+		if ss {
+			log.WithFields(log.Fields{"now": now, "lastCheckedStreams": v.LastCheckedStreams, "last+health": v.LastCheckedStreams.Add(s.Config.HealthLast), "stale": ss, "topic": k}).Debug("stale stream")
+		}
 	}
 
 	jsc := 0

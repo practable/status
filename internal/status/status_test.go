@@ -52,7 +52,8 @@ type RelayReports struct {
 	Reports     []rc.Report
 }
 
-func setNow(now time.Time) {
+func setNow(t *testing.T, now time.Time) {
+	t.Logf("Time now %s", now)
 	ct = now //this updates the status server and jwt time functions via ctp
 }
 
@@ -342,6 +343,10 @@ func TestGetStream(t *testing.T) {
 // TestAllOK checks that with good
 func TestAllOK(t *testing.T) {
 
+	setNow(t, time.Date(2022, 11, 5, 0, 0, 0, 0, time.UTC))
+
+	assert.Equal(t, time.Date(2022, 11, 5, 0, 0, 0, 0, time.UTC), s.Now())
+
 	reportsYAML, err := ioutil.ReadFile("reports.yaml")
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)
@@ -394,7 +399,7 @@ func TestAllOK(t *testing.T) {
 		fmt.Printf("\n\nSET00\n%+v\n\n\n", s.Experiments)
 	}
 
-	setNow(time.Date(2022, 11, 5, 0, 2, 0, 0, time.UTC))
+	setNow(t, time.Date(2022, 11, 5, 0, 0, 5, 0, time.UTC)) //keep steps smaller than config.HealthLast else relay reports appear stale
 
 	jr = reports.Jump["set01"].Reports
 	rr = reports.Relay["set01"].Reports
@@ -409,7 +414,7 @@ func TestAllOK(t *testing.T) {
 		fmt.Printf("\n\nSET01\n%+v\n\n\n", s.Experiments)
 	}
 
-	setNow(time.Date(2022, 11, 5, 0, 3, 0, 0, time.UTC))
+	setNow(t, time.Date(2022, 11, 5, 0, 0, 10, 0, time.UTC))
 
 	jr = reports.Jump["set02"].Reports
 	rr = reports.Relay["set02"].Reports
@@ -424,7 +429,7 @@ func TestAllOK(t *testing.T) {
 		fmt.Printf("\n\nSET02\n%+v\n\n\n", s.Experiments)
 	}
 
-	setNow(time.Date(2022, 11, 5, 0, 4, 0, 0, time.UTC))
+	setNow(t, time.Date(2022, 11, 5, 0, 0, 15, 0, time.UTC))
 
 	jr = reports.Jump["set03"].Reports
 	rr = reports.Relay["set03"].Reports
@@ -439,7 +444,7 @@ func TestAllOK(t *testing.T) {
 		fmt.Printf("\n\nSET03\n%+v\n\n\n", s.Experiments)
 	}
 
-	setNow(time.Date(2022, 11, 5, 0, 5, 0, 0, time.UTC))
+	setNow(t, time.Date(2022, 11, 5, 0, 0, 20, 0, time.UTC))
 
 	time.Sleep(100 * time.Millisecond)
 
