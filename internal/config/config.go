@@ -53,8 +53,9 @@ type Status struct {
 }
 
 type HealthyIssues struct {
-	Healthy bool
-	Issues  []string
+	Healthy     bool
+	JumpHealthy bool
+	Issues      []string
 }
 
 type HealthEvent struct {
@@ -72,6 +73,7 @@ type Report struct {
 	Healthy             bool
 	HealthEvents        []HealthEvent
 	JumpOK              bool
+	JumpHealthy         bool
 	JumpReport          jc.Report
 	LastCheckedJump     time.Time
 	LastCheckedStreams  time.Time

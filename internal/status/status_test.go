@@ -55,12 +55,14 @@ type RelayReports struct {
 }
 
 func setNow(t *testing.T, now time.Time) {
-	t.Logf("Time now %s", now)
+	if debug {
+		t.Logf("Time now %s", now)
+	}
 	ct = now //this updates the status server and jwt time functions via ctp
 }
 
 func init() {
-	debug = true
+	debug = false
 	if debug {
 		log.SetReportCaller(true)
 		log.SetLevel(log.DebugLevel)
@@ -488,6 +490,7 @@ func TestStatus(t *testing.T) {
 	// wait out the health startup of 1min, and then some, so we are starting next phase of test on an even 2min for ease of clock time editing
 
 	// Check current status
+	s.Lock()
 	assert.Equal(t, true, s.Experiments["test00"].JumpOK)
 	assert.Equal(t, false, s.Experiments["test01"].JumpOK)
 	assert.Equal(t, true, s.Experiments["test02"].JumpOK)
@@ -523,37 +526,41 @@ func TestStatus(t *testing.T) {
 	// you can't set Never in the reports.yaml file - instead set Last to the string "Never"
 	assert.Equal(t, true, s.Experiments["test06"].StreamReports["test06-st-video"].Stats.Tx.Never)
 	assert.Equal(t, false, s.Experiments["test07"].StreamReports["test07-st-video"].Stats.Tx.Never)
-	t.Logf("test06-st-video.Tx: %+v", s.Experiments["test06"].StreamReports["test06-st-video"].Stats.Tx)
-	t.Logf("test07-st-video.Tx: %+v", s.Experiments["test07"].StreamReports["test07-st-video"].Stats.Tx)
 
-	setNow(t, time.Date(2022, 11, 5, 0, 1, 55, 0, time.UTC)) //
+	if debug {
+		t.Logf("test06-st-video.Tx: %+v", s.Experiments["test06"].StreamReports["test06-st-video"].Stats.Tx)
+		t.Logf("test07-st-video.Tx: %+v", s.Experiments["test07"].StreamReports["test07-st-video"].Stats.Tx)
+	}
+	s.Unlock()
 
-	j.Status <- jr
-	r.Status <- rr
+	/***********
 
-	time.Sleep(10 * time.Millisecond)
+	 SET01
 
-	setNow(t, time.Date(2022, 11, 5, 0, 2, 0, 0, time.UTC)) // new time is 2min, longer than config.HealthStartup, and within config.HealthLast, so any healthy connections do not appear stale
-
-	j.Status <- jr
-	r.Status <- rr
-
-	time.Sleep(10 * time.Millisecond)
-
-	setNow(t, time.Date(2022, 11, 5, 0, 2, 5, 0, time.UTC)) //keep steps smaller than config.HealthLast else relay reports appear stale
+	***********/
 
 	jr = reports.Jump["set01"].Reports
+
 	rr = reports.Relay["set01"].Reports
 
-	j.Status <- jr
-	r.Status <- rr
+	for i := 1; i < 10; i++ { // must be longer than config.HealthLastChecked (1m) for test02's jump entry to expire
 
-	time.Sleep(10 * time.Millisecond)
+		setNow(t, loopTime)
+
+		j.Status <- jr
+		r.Status <- rr
+
+		time.Sleep(time.Millisecond)
+
+		loopTime = loopTime.Add(10 * time.Second)
+
+	}
 
 	if verbose {
 		fmt.Printf("\n\nSET01\n%+v\n\n\n", s.Experiments)
 	}
 
+	s.Lock()
 	assert.Equal(t, true, s.Experiments["test00"].JumpOK)
 	assert.Equal(t, false, s.Experiments["test01"].JumpOK)
 	assert.Equal(t, false, s.Experiments["test02"].JumpOK)
@@ -584,8 +591,9 @@ func TestStatus(t *testing.T) {
 	assert.Equal(t, false, s.Experiments["test06"].StreamOK["test06-st-video"])
 	assert.Equal(t, true, s.Experiments["test07"].StreamOK["test07-st-data"])
 	assert.Equal(t, false, s.Experiments["test07"].StreamOK["test07-st-video"])
+	s.Unlock()
 
-	setNow(t, time.Date(2022, 11, 5, 0, 2, 10, 0, time.UTC))
+	setNow(t, time.Date(2022, 11, 5, 0, 2, 20, 0, time.UTC))
 
 	jr = reports.Jump["set02"].Reports
 	rr = reports.Relay["set02"].Reports
@@ -599,6 +607,7 @@ func TestStatus(t *testing.T) {
 		fmt.Printf("\n\nSET02\n%+v\n\n\n", s.Experiments)
 	}
 
+	s.Lock()
 	assert.Equal(t, true, s.Experiments["test00"].JumpOK)
 	assert.Equal(t, true, s.Experiments["test01"].JumpOK)
 	assert.Equal(t, true, s.Experiments["test02"].JumpOK)
@@ -629,6 +638,7 @@ func TestStatus(t *testing.T) {
 	assert.Equal(t, true, s.Experiments["test06"].StreamOK["test06-st-video"])
 	assert.Equal(t, true, s.Experiments["test07"].StreamOK["test07-st-data"])
 	assert.Equal(t, true, s.Experiments["test07"].StreamOK["test07-st-video"])
+	s.Unlock()
 
 	time.Sleep(100 * time.Millisecond)
 
@@ -726,7 +736,7 @@ func TestEmailBody(t *testing.T) {
 	msg := EmailBody(s, alerts, systemAlerts)
 
 	// the content of the health events is not quite right in these, but those are supplied as parameters, so this does not affect the validity of this test (TODO: update to latest format for cosmetic reasons)
-	exp0 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 1 new health events \r\n\r\nSystem time: 2022-11-05 00:02:10 +0000 UTC\r\nThere are 1 new health events (1 issues, 0 ok): \r\ntest01 -- A   [unhealthy test01-st-data]\r\n\r\n\r\n All new and existing health issues:\r\ntest00 ><   U [missing jump, missing required test00-st-data]\r\ntest01 -- A   [unhealthy test01-st-data]\r\ntest02 ><   U [missing required test02-st-data]\r\ntest04 ><   U [missing required test04-st-video]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
+	exp0 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 1 new health events \r\n\r\nSystem time: 2022-11-05 00:02:10 +0000 UTC\r\nThere are 1 new health events (1 issues, 0 ok): \r\ntest01 -- A   [missing jump]\r\n\r\n\r\n All new and existing health issues:\r\ntest00 ><   U [missing required test00-st-data]\r\ntest01 -- A   [missing jump]\r\ntest02 ><   U [missing required test02-st-data]\r\ntest04 ><   U [missing required test04-st-video]\r\ntest06 ><   U [unhealthy test06-st-video]\r\ntest07 ><   U [unhealthy test07-st-video]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
 
 	assert.Equal(t, exp0, msg)
 
@@ -734,7 +744,7 @@ func TestEmailBody(t *testing.T) {
 
 	msg = EmailBody(s, alerts, systemAlerts)
 
-	exp1 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 1 new health events \r\n\r\nSystem time: 2022-11-05 00:02:10 +0000 UTC\r\n\r\nSystem alerts:\r\nsome system issue or other\r\nThere are 1 new health events (1 issues, 0 ok): \r\ntest01 -- A   [unhealthy test01-st-data]\r\n\r\n\r\n All new and existing health issues:\r\ntest00 ><   U [missing jump, missing required test00-st-data]\r\ntest01 -- A   [unhealthy test01-st-data]\r\ntest02 ><   U [missing required test02-st-data]\r\ntest04 ><   U [missing required test04-st-video]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
+	exp1 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 1 new health events \r\n\r\nSystem time: 2022-11-05 00:02:10 +0000 UTC\r\n\r\nSystem alerts:\r\nsome system issue or other\r\nThere are 1 new health events (1 issues, 0 ok): \r\ntest01 -- A   [missing jump]\r\n\r\n\r\n All new and existing health issues:\r\ntest00 ><   U [missing required test00-st-data]\r\ntest01 -- A   [missing jump]\r\ntest02 ><   U [missing required test02-st-data]\r\ntest04 ><   U [missing required test04-st-video]\r\ntest06 ><   U [unhealthy test06-st-video]\r\ntest07 ><   U [unhealthy test07-st-video]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
 	assert.Equal(t, exp1, msg)
 
 }

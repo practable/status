@@ -4,13 +4,12 @@ test00:
   HealthEvents:
   - Healthy: false
     Issues:
-    - missing jump
     - missing required test00-st-data
-    JumpOK: false
+    JumpOK: true
     StreamOK: {}
     When: "2022-11-05T00:01:00Z"
   Healthy: false
-  JumpOK: false
+  JumpOK: true
   JumpReport:
     canRead: true
     canWrite: true
@@ -48,13 +47,13 @@ test01:
   HealthEvents:
   - Healthy: false
     Issues:
-    - unhealthy test01-st-data
-    JumpOK: true
+    - missing jump
+    JumpOK: false
     StreamOK:
-      test01-st-data: false
+      test01-st-data: true
     When: "2022-11-05T00:01:00Z"
   Healthy: false
-  JumpOK: true
+  JumpOK: false
   JumpReport:
     canRead: false
     canWrite: false
@@ -80,7 +79,7 @@ test01:
   LastFoundInManifest: "2022-11-05T00:00:00Z"
   ResourceName: r-test01
   StreamOK:
-    test01-st-data: false
+    test01-st-data: true
   StreamReports:
     test01-st-data:
       canRead: true
@@ -207,8 +206,8 @@ test03:
         size: 0
       tx:
         fps: 25
-        last: 3600000000000
-        never: false
+        last: 3596400000000000
+        never: true
         size: 1000
     topic: test03
     userAgent: unknown user agent
@@ -434,14 +433,15 @@ test06:
   Available: false
   FirstChecked: "2022-11-05T00:00:00Z"
   HealthEvents:
-  - Healthy: true
-    Issues: []
+  - Healthy: false
+    Issues:
+    - unhealthy test06-st-video
     JumpOK: true
     StreamOK:
       test06-st-data: true
-      test06-st-video: true
+      test06-st-video: false
     When: "2022-11-05T00:01:00Z"
-  Healthy: true
+  Healthy: false
   JumpOK: true
   JumpReport:
     canRead: true
@@ -472,7 +472,7 @@ test06:
   ResourceName: ""
   StreamOK:
     test06-st-data: true
-    test06-st-video: true
+    test06-st-video: false
   StreamReports:
     test06-st-data:
       canRead: true
@@ -515,8 +515,8 @@ test06:
           size: 0
         tx:
           fps: 25
-          last: 0
-          never: false
+          last: 3596400000000000
+          never: true
           size: 1000
       topic: test06-st-video
       userAgent: unknown user agent
@@ -525,14 +525,15 @@ test07:
   Available: false
   FirstChecked: "2022-11-05T00:00:00Z"
   HealthEvents:
-  - Healthy: true
-    Issues: []
+  - Healthy: false
+    Issues:
+    - unhealthy test07-st-video
     JumpOK: true
     StreamOK:
       test07-st-data: true
-      test07-st-video: true
+      test07-st-video: false
     When: "2022-11-05T00:01:00Z"
-  Healthy: true
+  Healthy: false
   JumpOK: true
   JumpReport:
     canRead: true
@@ -563,7 +564,7 @@ test07:
   ResourceName: ""
   StreamOK:
     test07-st-data: true
-    test07-st-video: true
+    test07-st-video: false
   StreamReports:
     test07-st-data:
       canRead: true

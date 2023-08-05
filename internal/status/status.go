@@ -518,8 +518,9 @@ func updateHealth(s *config.Status) {
 		}
 
 		hm[k] = config.HealthyIssues{
-			Healthy: h,
-			Issues:  issues,
+			Healthy:     h,
+			JumpHealthy: v.JumpOK,
+			Issues:      issues,
 		}
 
 		// update availability map
@@ -543,8 +544,8 @@ func updateHealth(s *config.Status) {
 			continue
 		}
 
-		// add event if health has changed, or if no event previously registered
-		if r.Healthy != v.Healthy || len(r.HealthEvents) == 0 {
+		// add event if health has changed, or if no event previously registered, or if jump has changed
+		if r.Healthy != v.Healthy || len(r.HealthEvents) == 0 || r.JumpHealthy != v.JumpHealthy {
 			he := config.HealthEvent{
 				Healthy:  v.Healthy,
 				When:     now,
@@ -563,7 +564,7 @@ func updateHealth(s *config.Status) {
 		}
 
 		r.Healthy = v.Healthy
-
+		r.JumpHealthy = v.JumpHealthy
 		expt[k] = r
 	}
 
@@ -718,14 +719,19 @@ func EmailBody(s *config.Status, alerts map[string]bool, systemAlerts []string) 
 
 	cav := " -- A   "
 	cun := " ><   U "
-	cok := " ok A   " //🆗
+	coka := " ok A   "  //🆗
+	coku := " ok   U  " //🆗
 
 	for _, k := range amissues {
 
 		v := alerts[k]
 
-		if v {
-			msg += k + cok + "\r\n"
+		if v { //shouldn't get a positive value here for an issue
+			code := coku
+			if s.Experiments[k].Available {
+				code = coka
+			}
+			msg += k + code + "\r\n"
 		} else {
 
 			code := cun
@@ -747,8 +753,12 @@ func EmailBody(s *config.Status, alerts map[string]bool, systemAlerts []string) 
 		v := alerts[k]
 
 		if v {
-			msg += k + cok + "\r\n"
-		} else {
+			code := coku
+			if s.Experiments[k].Available {
+				code = coka
+			}
+			msg += k + code + "\r\n"
+		} else { //shouldn't get a negative value here for an ok
 
 			code := cun
 			if s.Experiments[k].Available {
