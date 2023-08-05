@@ -1,0 +1,604 @@
+test00:
+  Available: false
+  FirstChecked: "2022-11-05T00:00:00Z"
+  HealthEvents:
+  - Healthy: false
+    Issues:
+    - no current streams
+    JumpOK: true
+    StreamOK: {}
+    When: "2022-11-05T00:01:00Z"
+  Healthy: false
+  JumpOK: true
+  JumpReport:
+    canRead: true
+    canWrite: true
+    connected: "0001-01-01T00:00:00Z"
+    expiresAt: "2023-10-01T12:00:00Z"
+    remoteAddr: 123.123.1.100
+    scopes:
+    - read
+    - write
+    - host
+    stats:
+      rx:
+        fps: 0
+        last: 0
+        never: false
+        size: 0
+      tx:
+        fps: 25
+        last: 100000000
+        never: false
+        size: 1000
+    topic: test00
+    userAgent: unknown user agent
+  LastCheckedJump: "2022-11-05T00:02:05Z"
+  LastCheckedStreams: "0001-01-01T00:00:00Z"
+  LastFoundInManifest: "0001-01-01T00:00:00Z"
+  ResourceName: ""
+  StreamOK: {}
+  StreamReports: {}
+  StreamRequired: {}
+test01:
+  Available: false
+  FirstChecked: "2022-11-05T00:00:00Z"
+  HealthEvents:
+  - Healthy: false
+    Issues:
+    - jump present but not ok
+    - jump missing
+    JumpOK: false
+    StreamOK:
+      test01-st-data: true
+    When: "2022-11-05T00:01:00Z"
+  Healthy: false
+  JumpOK: false
+  JumpReport:
+    canRead: false
+    canWrite: false
+    connected: "0001-01-01T00:00:00Z"
+    expiresAt: "0001-01-01T00:00:00Z"
+    remoteAddr: ""
+    scopes: null
+    stats:
+      rx:
+        fps: 0
+        last: 0
+        never: false
+        size: 0
+      tx:
+        fps: 0
+        last: 0
+        never: false
+        size: 0
+    topic: ""
+    userAgent: ""
+  LastCheckedJump: "0001-01-01T00:00:00Z"
+  LastCheckedStreams: "2022-11-05T00:02:05Z"
+  LastFoundInManifest: "0001-01-01T00:00:00Z"
+  ResourceName: ""
+  StreamOK:
+    test01-st-data: true
+  StreamReports:
+    test01-st-data:
+      canRead: true
+      canWrite: true
+      connected: "0001-01-01T00:00:00Z"
+      expiresAt: "2023-10-01T12:00:00Z"
+      remoteAddr: 123.123.1.101
+      scopes:
+      - read
+      - write
+      - expt
+      stats:
+        rx:
+          fps: 0
+          last: 0
+          never: false
+          size: 0
+        tx:
+          fps: 25
+          last: 100000000
+          never: false
+          size: 1000
+      topic: test01-st-data
+      userAgent: unknown user agent
+  StreamRequired: {}
+test02:
+  Available: false
+  FirstChecked: "2022-11-05T00:00:00Z"
+  HealthEvents:
+  - Healthy: true
+    Issues: []
+    JumpOK: true
+    StreamOK:
+      test02-st-video: true
+    When: "2022-11-05T00:01:00Z"
+  Healthy: true
+  JumpOK: true
+  JumpReport:
+    canRead: true
+    canWrite: true
+    connected: "0001-01-01T00:00:00Z"
+    expiresAt: "2023-10-01T12:00:00Z"
+    remoteAddr: 123.123.1.101
+    scopes:
+    - read
+    - write
+    - host
+    stats:
+      rx:
+        fps: 0
+        last: 0
+        never: false
+        size: 0
+      tx:
+        fps: 25
+        last: 100000000
+        never: false
+        size: 1000
+    topic: test02
+    userAgent: unknown user agent
+  LastCheckedJump: "2022-11-05T00:02:05Z"
+  LastCheckedStreams: "2022-11-05T00:02:05Z"
+  LastFoundInManifest: "0001-01-01T00:00:00Z"
+  ResourceName: ""
+  StreamOK:
+    test02-st-video: true
+  StreamReports:
+    test02-st-video:
+      canRead: true
+      canWrite: true
+      connected: "0001-01-01T00:00:00Z"
+      expiresAt: "2023-10-01T12:00:00Z"
+      remoteAddr: 123.123.1.102
+      scopes:
+      - read
+      - write
+      - expt
+      stats:
+        rx:
+          fps: 0
+          last: 0
+          never: false
+          size: 0
+        tx:
+          fps: 25
+          last: 1000000000
+          never: false
+          size: 1000
+      topic: test02-st-video
+      userAgent: unknown user agent
+  StreamRequired: {}
+test03:
+  Available: false
+  FirstChecked: "2022-11-05T00:00:00Z"
+  HealthEvents:
+  - Healthy: true
+    Issues: []
+    JumpOK: true
+    StreamOK:
+      test03-st-data: true
+      test03-st-video: true
+    When: "2022-11-05T00:01:00Z"
+  Healthy: true
+  JumpOK: true
+  JumpReport:
+    canRead: true
+    canWrite: true
+    connected: "0001-01-01T00:00:00Z"
+    expiresAt: "2023-10-01T12:00:00Z"
+    remoteAddr: 123.123.1.103
+    scopes:
+    - read
+    - write
+    - host
+    stats:
+      rx:
+        fps: 0
+        last: 0
+        never: false
+        size: 0
+      tx:
+        fps: 25
+        last: 3600000000000
+        never: false
+        size: 1000
+    topic: test03
+    userAgent: unknown user agent
+  LastCheckedJump: "2022-11-05T00:02:05Z"
+  LastCheckedStreams: "2022-11-05T00:02:05Z"
+  LastFoundInManifest: "0001-01-01T00:00:00Z"
+  ResourceName: ""
+  StreamOK:
+    test03-st-data: true
+    test03-st-video: true
+  StreamReports:
+    test03-st-data:
+      canRead: true
+      canWrite: true
+      connected: "0001-01-01T00:00:00Z"
+      expiresAt: "2023-10-01T12:00:00Z"
+      remoteAddr: 123.123.1.103
+      scopes:
+      - read
+      - write
+      - expt
+      stats:
+        rx:
+          fps: 0
+          last: 0
+          never: false
+          size: 0
+        tx:
+          fps: 25
+          last: 10000000
+          never: false
+          size: 1000
+      topic: test03-st-data
+      userAgent: unknown user agent
+    test03-st-video:
+      canRead: true
+      canWrite: true
+      connected: "0001-01-01T00:00:00Z"
+      expiresAt: "2023-10-01T12:00:00Z"
+      remoteAddr: 123.123.1.103
+      scopes:
+      - read
+      - write
+      - expt
+      stats:
+        rx:
+          fps: 0
+          last: 0
+          never: false
+          size: 0
+        tx:
+          fps: 25
+          last: 33000000
+          never: false
+          size: 1000
+      topic: test03-st-video
+      userAgent: unknown user agent
+  StreamRequired: {}
+test04:
+  Available: false
+  FirstChecked: "2022-11-05T00:00:00Z"
+  HealthEvents:
+  - Healthy: true
+    Issues: []
+    JumpOK: true
+    StreamOK:
+      test04-st-data: true
+    When: "2022-11-05T00:01:00Z"
+  Healthy: true
+  JumpOK: true
+  JumpReport:
+    canRead: true
+    canWrite: true
+    connected: "0001-01-01T00:00:00Z"
+    expiresAt: "2023-10-01T12:00:00Z"
+    remoteAddr: 123.123.1.104
+    scopes:
+    - read
+    - write
+    - host
+    stats:
+      rx:
+        fps: 0
+        last: 0
+        never: false
+        size: 0
+      tx:
+        fps: 25
+        last: 3600000000000
+        never: false
+        size: 1000
+    topic: test04
+    userAgent: unknown user agent
+  LastCheckedJump: "2022-11-05T00:02:05Z"
+  LastCheckedStreams: "2022-11-05T00:02:05Z"
+  LastFoundInManifest: "0001-01-01T00:00:00Z"
+  ResourceName: ""
+  StreamOK:
+    test04-st-data: true
+  StreamReports:
+    test04-st-data:
+      canRead: true
+      canWrite: true
+      connected: "0001-01-01T00:00:00Z"
+      expiresAt: "2023-10-01T12:00:00Z"
+      remoteAddr: 123.123.1.104
+      scopes:
+      - read
+      - write
+      - expt
+      stats:
+        rx:
+          fps: 0
+          last: 0
+          never: false
+          size: 0
+        tx:
+          fps: 25
+          last: 2000000000
+          never: false
+          size: 1000
+      topic: test04-st-data
+      userAgent: unknown user agent
+  StreamRequired: {}
+test05:
+  Available: false
+  FirstChecked: "2022-11-05T00:00:00Z"
+  HealthEvents:
+  - Healthy: true
+    Issues: []
+    JumpOK: true
+    StreamOK:
+      test05-st-data: true
+      test05-st-video: true
+    When: "2022-11-05T00:01:00Z"
+  Healthy: true
+  JumpOK: true
+  JumpReport:
+    canRead: true
+    canWrite: true
+    connected: "0001-01-01T00:00:00Z"
+    expiresAt: "2023-10-01T12:00:00Z"
+    remoteAddr: 123.123.1.105
+    scopes:
+    - read
+    - write
+    - host
+    stats:
+      rx:
+        fps: 0
+        last: 0
+        never: false
+        size: 0
+      tx:
+        fps: 25
+        last: 2000000000
+        never: false
+        size: 1000
+    topic: test05
+    userAgent: unknown user agent
+  LastCheckedJump: "2022-11-05T00:02:05Z"
+  LastCheckedStreams: "2022-11-05T00:02:05Z"
+  LastFoundInManifest: "0001-01-01T00:00:00Z"
+  ResourceName: ""
+  StreamOK:
+    test05-st-data: true
+    test05-st-video: true
+  StreamReports:
+    test05-st-data:
+      canRead: true
+      canWrite: true
+      connected: "0001-01-01T00:00:00Z"
+      expiresAt: "2023-10-01T12:00:00Z"
+      remoteAddr: 123.123.1.105
+      scopes:
+      - read
+      - write
+      - expt
+      stats:
+        rx:
+          fps: 0
+          last: 0
+          never: false
+          size: 0
+        tx:
+          fps: 25
+          last: 2000000000
+          never: false
+          size: 1000
+      topic: test05-st-data
+      userAgent: unknown user agent
+    test05-st-video:
+      canRead: true
+      canWrite: true
+      connected: "0001-01-01T00:00:00Z"
+      expiresAt: "2023-10-01T12:00:00Z"
+      remoteAddr: 123.123.1.105
+      scopes:
+      - read
+      - write
+      - expt
+      stats:
+        rx:
+          fps: 0
+          last: 0
+          never: false
+          size: 0
+        tx:
+          fps: 25
+          last: 2000000000
+          never: false
+          size: 1000
+      topic: test05-st-video
+      userAgent: unknown user agent
+  StreamRequired: {}
+test06:
+  Available: false
+  FirstChecked: "2022-11-05T00:00:00Z"
+  HealthEvents:
+  - Healthy: true
+    Issues: []
+    JumpOK: true
+    StreamOK:
+      test06-st-data: true
+      test06-st-video: true
+    When: "2022-11-05T00:01:00Z"
+  Healthy: true
+  JumpOK: true
+  JumpReport:
+    canRead: true
+    canWrite: true
+    connected: "0001-01-01T00:00:00Z"
+    expiresAt: "2023-10-01T12:00:00Z"
+    remoteAddr: 123.123.1.106
+    scopes:
+    - read
+    - write
+    - host
+    stats:
+      rx:
+        fps: 0
+        last: 0
+        never: false
+        size: 0
+      tx:
+        fps: 25
+        last: 2000000000
+        never: false
+        size: 1000
+    topic: test06
+    userAgent: unknown user agent
+  LastCheckedJump: "2022-11-05T00:02:05Z"
+  LastCheckedStreams: "2022-11-05T00:02:05Z"
+  LastFoundInManifest: "0001-01-01T00:00:00Z"
+  ResourceName: ""
+  StreamOK:
+    test06-st-data: true
+    test06-st-video: true
+  StreamReports:
+    test06-st-data:
+      canRead: true
+      canWrite: true
+      connected: "0001-01-01T00:00:00Z"
+      expiresAt: "2023-10-01T12:00:00Z"
+      remoteAddr: 123.123.1.101
+      scopes:
+      - read
+      - write
+      - expt
+      stats:
+        rx:
+          fps: 0
+          last: 0
+          never: false
+          size: 0
+        tx:
+          fps: 25
+          last: 1000000000
+          never: false
+          size: 1000
+      topic: test06-st-data
+      userAgent: unknown user agent
+    test06-st-video:
+      canRead: true
+      canWrite: true
+      connected: "0001-01-01T00:00:00Z"
+      expiresAt: "2023-10-01T12:00:00Z"
+      remoteAddr: 123.123.1.101
+      scopes:
+      - read
+      - write
+      - expt
+      stats:
+        rx:
+          fps: 0
+          last: 0
+          never: false
+          size: 0
+        tx:
+          fps: 25
+          last: 0
+          never: false
+          size: 1000
+      topic: test06-st-video
+      userAgent: unknown user agent
+  StreamRequired: {}
+test07:
+  Available: false
+  FirstChecked: "2022-11-05T00:00:00Z"
+  HealthEvents:
+  - Healthy: false
+    Issues:
+    - stream unhealthy (test07-st-video)
+    JumpOK: true
+    StreamOK:
+      test07-st-data: true
+      test07-st-video: false
+    When: "2022-11-05T00:01:00Z"
+  Healthy: false
+  JumpOK: true
+  JumpReport:
+    canRead: true
+    canWrite: true
+    connected: "0001-01-01T00:00:00Z"
+    expiresAt: "2023-10-01T12:00:00Z"
+    remoteAddr: 123.123.1.107
+    scopes:
+    - read
+    - write
+    - host
+    stats:
+      rx:
+        fps: 0
+        last: 0
+        never: false
+        size: 0
+      tx:
+        fps: 25
+        last: 2000000000
+        never: false
+        size: 1000
+    topic: test07
+    userAgent: unknown user agent
+  LastCheckedJump: "2022-11-05T00:02:05Z"
+  LastCheckedStreams: "2022-11-05T00:02:05Z"
+  LastFoundInManifest: "0001-01-01T00:00:00Z"
+  ResourceName: ""
+  StreamOK:
+    test07-st-data: true
+    test07-st-video: false
+  StreamReports:
+    test07-st-data:
+      canRead: true
+      canWrite: true
+      connected: "0001-01-01T00:00:00Z"
+      expiresAt: "2023-10-01T12:00:00Z"
+      remoteAddr: 123.123.1.101
+      scopes:
+      - read
+      - write
+      - expt
+      stats:
+        rx:
+          fps: 0
+          last: 0
+          never: false
+          size: 0
+        tx:
+          fps: 25
+          last: 2000000000
+          never: false
+          size: 1000
+      topic: test07-st-data
+      userAgent: unknown user agent
+    test07-st-video:
+      canRead: true
+      canWrite: true
+      connected: "0001-01-01T00:00:00Z"
+      expiresAt: "2023-10-01T12:00:00Z"
+      remoteAddr: 123.123.1.101
+      scopes:
+      - read
+      - write
+      - expt
+      stats:
+        rx:
+          fps: 0
+          last: 0
+          never: false
+          size: 0
+        tx:
+          fps: 25
+          last: 180000000000
+          never: false
+          size: 1000
+      topic: test07-st-video
+      userAgent: unknown user agent
+  StreamRequired: {}

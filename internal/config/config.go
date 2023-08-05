@@ -22,7 +22,8 @@ type Config struct {
 	EmailCc             []string
 	EmailSubject        string
 	HealthEvents        int
-	HealthLast          time.Duration
+	HealthLastChecked   time.Duration
+	HealthLastActive    time.Duration
 	HealthStartup       time.Duration
 	HealthLogEvery      time.Duration
 	HostBook            string

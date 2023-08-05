@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"path"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -304,7 +305,7 @@ func updateFromRelay(s *config.Status, reports []rc.Report) {
 
 		expt.StreamOK[stream] = true
 
-		if r.Stats.Tx.Last > s.Config.HealthLast {
+		if r.Stats.Tx.Last > s.Config.HealthLastActive {
 			expt.StreamOK[stream] = false
 		}
 
@@ -352,7 +353,7 @@ func updateHealth(s *config.Status) {
 
 	now := s.Now() //keep same for all entries from this set of reports
 
-	emailAlerts := []string{}
+	systemAlerts := []string{}
 
 	//checkedExperiments := []string{}
 	//healthyCount := 0
@@ -364,13 +365,13 @@ func updateHealth(s *config.Status) {
 	// check for staleness of reports
 	for k, v := range s.Experiments {
 
-		js := (v.LastCheckedJump.Add(s.Config.HealthLast)).Before(now)
-		ss := (v.LastCheckedStreams.Add(s.Config.HealthLast)).Before(now)
+		js := (v.LastCheckedJump.Add(s.Config.HealthLastChecked)).Before(now)
+		ss := (v.LastCheckedStreams.Add(s.Config.HealthLastChecked)).Before(now)
 		jumpStale[k] = js
 		streamsStale[k] = ss
 
 		if ss {
-			log.WithFields(log.Fields{"now": now, "lastCheckedStreams": v.LastCheckedStreams, "last+health": v.LastCheckedStreams.Add(s.Config.HealthLast), "stale": ss, "topic": k}).Debug("stale stream")
+			log.WithFields(log.Fields{"now": now, "lastCheckedStreams": v.LastCheckedStreams, "last+health": v.LastCheckedStreams.Add(s.Config.HealthLastChecked), "stale": ss, "topic": k}).Debug("stale stream")
 		}
 	}
 
@@ -392,13 +393,13 @@ func updateHealth(s *config.Status) {
 	if jsc == len(jumpStale) {
 		msg := "jump has no fresh reports so may be down"
 		log.Error(msg)
-		emailAlerts = append(emailAlerts, msg)
+		systemAlerts = append(systemAlerts, msg)
 	}
 
 	if ssc == len(streamsStale) {
 		msg := "relay has no fresh reports so may be down"
 		log.Error(msg)
-		emailAlerts = append(emailAlerts, msg)
+		systemAlerts = append(systemAlerts, msg)
 	}
 
 	for k, v := range s.Experiments {
@@ -413,7 +414,7 @@ func updateHealth(s *config.Status) {
 		}
 
 		// jump must have been recently checked
-		if !(v.LastCheckedJump.Add(s.Config.HealthLast)).After(now) {
+		if !(v.LastCheckedJump.Add(s.Config.HealthLastChecked)).After(now) {
 			h = false
 			issues = append(issues, "jump missing")
 		}
@@ -427,7 +428,7 @@ func updateHealth(s *config.Status) {
 		}
 
 		// the streams must have been recently checked
-		if !(v.LastCheckedStreams.Add(s.Config.HealthLast)).After(now) {
+		if !(v.LastCheckedStreams.Add(s.Config.HealthLastChecked)).After(now) {
 			h = false
 			issues = append(issues, "no current streams")
 		}
@@ -494,61 +495,18 @@ func updateHealth(s *config.Status) {
 		return
 	}
 
-	count := strconv.Itoa(len(alerts))
-
 	emailAuthType := strings.TrimSpace(strings.ToLower(s.Config.EmailAuthType))
 
 	plainAuth := smtp.PlainAuth("", s.Config.EmailFrom, s.Config.EmailPassword, s.Config.EmailHost)
 
-	toHeader := strings.Join(s.Config.EmailTo, ",")
-	ccHeader := strings.Join(s.Config.EmailCc, ",")
-	receivers := append(s.Config.EmailTo, s.Config.EmailCc...)
-	// The msg parameter should be an RFC 822-style email with headers first, a blank line, and then the message body. The lines of msg should be CRLF terminated. The msg headers should usually include fields such as "From", "To", "Subject", and "Cc".
-
-	msg := "To: " + toHeader + "\r\n" +
-		"Cc: " + ccHeader + "\r\n" +
-		"Subject: " + s.Config.EmailSubject + " " + count + " new health events \r\n" +
-		"\r\n"
-
-	if len(emailAlerts) > 0 {
-		msg += "\r\nSystem alerts:\r\n" + strings.Join(emailAlerts, "\r\n") + "\r\n"
-	}
-
-	msg += "There are " + count + " new health events: \r\n"
-
-	for k, v := range alerts {
-		if v {
-			msg += k + " OK\r\n"
-		} else {
-			he := s.Experiments[k].HealthEvents
-			issues := "[unknown]"
-			if len(he) > 0 {
-				issues = "[" + strings.Join(he[len(he)-1].Issues, ",") + "]"
-			}
-			msg += k + " ** issue ** " + issues + "\r\n"
-		}
-
-	}
-
-	msg += "\r\n\r\n All new and existing health issues:\r\n"
-
-	for k, v := range s.Experiments {
-		if !v.Healthy {
-			he := v.HealthEvents
-			issues := "[unknown]"
-			if len(he) > 0 {
-				issues = "[" + strings.Join(he[len(he)-1].Issues, ",") + "]"
-			}
-			msg += k + " ** issue ** " + issues + "\r\n"
-		}
-	}
-
-	msg += "\r\n\r\n For the latest complete status information, please go to " + s.Config.EmailLink + "\r\n"
+	msg := EmailBody(s, alerts, systemAlerts)
 
 	log.Errorf(msg)
 	// EmailTo must be []string
 
 	hostPort := s.Config.EmailHost + ":" + strconv.Itoa(s.Config.EmailPort)
+
+	receivers := append(s.Config.EmailTo, s.Config.EmailCc...)
 
 	log.WithFields(log.Fields{"s.Config.EmailHost": s.Config.EmailHost, "s.Config.EmailPort": s.Config.EmailPort, "hostPort": hostPort, "s.Config.EmailFrom": s.Config.EmailFrom, "receivers": receivers}).Debug("Email host")
 
@@ -569,4 +527,106 @@ func updateHealth(s *config.Status) {
 
 	}
 
+}
+
+func EmailBody(s *config.Status, alerts map[string]bool, systemAlerts []string) string {
+
+	toHeader := strings.Join(s.Config.EmailTo, ",")
+	ccHeader := strings.Join(s.Config.EmailCc, ",")
+
+	// The msg parameter should be an RFC 822-style email with headers first,
+	// a blank line, and then the message body. The lines of msg should be CRLF terminated.
+	// The msg headers should usually include fields such as "From", "To", "Subject", and "Cc".
+
+	count := strconv.Itoa(len(alerts))
+
+	msg := "To: " + toHeader + "\r\n" +
+		"Cc: " + ccHeader + "\r\n" +
+		"Subject: " + s.Config.EmailSubject + " " + count + " new health events \r\n" +
+		"\r\nSystem time: " + s.Now().String() + "\r\n"
+
+	if len(systemAlerts) > 0 {
+		msg += "\r\nSystem alerts:\r\n" + strings.Join(systemAlerts, "\r\n") + "\r\n"
+	}
+
+	amok := []string{}
+	amissues := []string{}
+
+	for k, v := range alerts {
+		if v {
+			amok = append(amok, k)
+		} else {
+			amissues = append(amissues, k)
+		}
+	}
+
+	sort.Strings(amissues)
+	sort.Strings(amok)
+
+	msg += "There are " + count + " new health events (" +
+		strconv.Itoa(len(amissues)) + " issues, " + strconv.Itoa(len(amok)) + " ok): \r\n"
+
+	for _, k := range amissues {
+
+		v := alerts[k]
+
+		if v {
+			msg += k + " ok\r\n" //" 🆗\r\n"
+		} else {
+			he := s.Experiments[k].HealthEvents
+			issues := "[unknown]"
+			if len(he) > 0 {
+				issues = "[" + strings.Join(he[len(he)-1].Issues, ",") + "]"
+			}
+			msg += k + " -- " + issues + "\r\n"
+		}
+
+	}
+
+	for _, k := range amok {
+
+		v := alerts[k]
+
+		if v {
+			msg += k + " ok\r\n" //" 🆗\r\n"
+		} else {
+			he := s.Experiments[k].HealthEvents
+			issues := "[unknown]"
+			if len(he) > 0 {
+				issues = "[" + strings.Join(he[len(he)-1].Issues, ",") + "]"
+			}
+			msg += k + " -- " + issues + "\r\n"
+		}
+
+	}
+
+	msg += "\r\n\r\n All new and existing health issues:\r\n"
+
+	hm := []string{}
+
+	for k, v := range s.Experiments {
+		if !v.Healthy {
+			hm = append(hm, k)
+		}
+	}
+
+	sort.Strings(hm)
+
+	for _, k := range hm {
+
+		v := s.Experiments[k]
+
+		if !v.Healthy {
+			he := v.HealthEvents
+			issues := "[unknown]"
+			if len(he) > 0 {
+				issues = "[" + strings.Join(he[len(he)-1].Issues, ",") + "]"
+			}
+			msg += k + " -- " + issues + "\r\n"
+		}
+	}
+
+	msg += "\r\n\r\n For the latest complete status information, please go to " + s.Config.EmailLink + "\r\n"
+
+	return msg
 }

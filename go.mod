@@ -16,8 +16,8 @@ require (
 	github.com/mocktools/go-smtp-mock/v2 v2.1.0
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/practable/book v0.3.12-0.20230804082500-b532994076b1
-	github.com/practable/jump v0.3.3-0.20230727224731-266ee2a11518
-	github.com/practable/relay v0.6.7-0.20230727225526-1455418648cf
+	github.com/practable/jump v0.3.3-0.20230805153610-95302192c149
+	github.com/practable/relay v0.6.7-0.20230805153624-a3efdca32666
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0

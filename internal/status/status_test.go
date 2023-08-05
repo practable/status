@@ -153,7 +153,7 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	time.Sleep(time.Second) //let book start!
+	time.Sleep(500 * time.Millisecond) //let book start! (100ms is too soon)
 
 	// upload manifest
 	client := &http.Client{}
@@ -255,7 +255,7 @@ func TestMain(m *testing.M) {
 	*  start status server
 	****************************/
 
-	time.Sleep(time.Second) // let other services start
+	time.Sleep(100 * time.Millisecond) // let other services start
 
 	s = config.New()
 	s.Config = config.Config{
@@ -272,7 +272,8 @@ func TestMain(m *testing.M) {
 		EmailSubject:        "test",
 		EmailTo:             []string{"to@test.org"},
 		HealthEvents:        10,
-		HealthLast:          time.Duration(10 * time.Second),
+		HealthLastActive:    time.Duration(10 * time.Second),
+		HealthLastChecked:   time.Minute,
 		HealthLogEvery:      time.Hour,   //prevent interfering with test
 		HealthStartup:       time.Minute, // won't cause actual delays
 		HostBook:            hostBook,
@@ -299,7 +300,7 @@ func TestMain(m *testing.M) {
 	r = rc.New()
 	go Run(ctx, j, r, s) //doesn't include the API server
 
-	time.Sleep(time.Second) //let status start
+	time.Sleep(100 * time.Millisecond) //let status start
 
 	exitVal := m.Run()
 
@@ -389,17 +390,42 @@ func TestAllOK(t *testing.T) {
 
 	*/
 
-	j.Status <- jr
-	r.Status <- rr
+	loopTime := time.Date(2022, 11, 5, 0, 0, 0, 0, time.UTC)
 
-	time.Sleep(100 * time.Millisecond)
+	for i := 1; i < 10; i++ {
+
+		setNow(t, loopTime)
+
+		j.Status <- jr
+		r.Status <- rr
+
+		time.Sleep(time.Millisecond)
+
+		loopTime = loopTime.Add(10 * time.Second)
+
+	}
 
 	if verbose {
-
 		fmt.Printf("\n\nSET00\n%+v\n\n\n", s.Experiments)
 	}
 
-	setNow(t, time.Date(2022, 11, 5, 0, 0, 5, 0, time.UTC)) //keep steps smaller than config.HealthLast else relay reports appear stale
+	// wait out the health startup of 1min, and then some, so we are starting next phase of test on an even 2min for ease of clock time editing
+
+	setNow(t, time.Date(2022, 11, 5, 0, 1, 55, 0, time.UTC)) //
+
+	j.Status <- jr
+	r.Status <- rr
+
+	time.Sleep(10 * time.Millisecond)
+
+	setNow(t, time.Date(2022, 11, 5, 0, 2, 0, 0, time.UTC)) // new time is 2min, longer than config.HealthStartup, and within config.HealthLast, so any healthy connections do not appear stale
+
+	j.Status <- jr
+	r.Status <- rr
+
+	time.Sleep(10 * time.Millisecond)
+
+	setNow(t, time.Date(2022, 11, 5, 0, 2, 5, 0, time.UTC)) //keep steps smaller than config.HealthLast else relay reports appear stale
 
 	jr = reports.Jump["set01"].Reports
 	rr = reports.Relay["set01"].Reports
@@ -407,47 +433,46 @@ func TestAllOK(t *testing.T) {
 	j.Status <- jr
 	r.Status <- rr
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 
 	if verbose {
-
 		fmt.Printf("\n\nSET01\n%+v\n\n\n", s.Experiments)
 	}
 
-	setNow(t, time.Date(2022, 11, 5, 0, 0, 10, 0, time.UTC))
+	setNow(t, time.Date(2022, 11, 5, 0, 2, 10, 0, time.UTC))
+	/*
+			jr = reports.Jump["set02"].Reports
+			rr = reports.Relay["set02"].Reports
 
-	jr = reports.Jump["set02"].Reports
-	rr = reports.Relay["set02"].Reports
+			j.Status <- jr
+			r.Status <- rr
 
-	j.Status <- jr
-	r.Status <- rr
+			time.Sleep(100 * time.Millisecond)
 
-	time.Sleep(100 * time.Millisecond)
+			if verbose {
 
-	if verbose {
+				fmt.Printf("\n\nSET02\n%+v\n\n\n", s.Experiments)
+			}
 
-		fmt.Printf("\n\nSET02\n%+v\n\n\n", s.Experiments)
-	}
+			setNow(t, time.Date(2022, 11, 5, 0, 0, 15, 0, time.UTC))
 
-	setNow(t, time.Date(2022, 11, 5, 0, 0, 15, 0, time.UTC))
+			jr = reports.Jump["set03"].Reports
+			rr = reports.Relay["set03"].Reports
 
-	jr = reports.Jump["set03"].Reports
-	rr = reports.Relay["set03"].Reports
+			j.Status <- jr
+			r.Status <- rr
 
-	j.Status <- jr
-	r.Status <- rr
+			time.Sleep(time.Second)
 
-	time.Sleep(time.Second)
+			if verbose {
 
-	if verbose {
+				fmt.Printf("\n\nSET03\n%+v\n\n\n", s.Experiments)
+			}
 
-		fmt.Printf("\n\nSET03\n%+v\n\n\n", s.Experiments)
-	}
+			setNow(t, time.Date(2022, 11, 5, 0, 0, 20, 0, time.UTC))
 
-	setNow(t, time.Date(2022, 11, 5, 0, 0, 20, 0, time.UTC))
-
-	time.Sleep(100 * time.Millisecond)
-
+		time.Sleep(100 * time.Millisecond)
+	*/
 	msg := SMTPServer.Messages()
 
 	fmt.Printf("\n\nEmails\n%+v\n\n\n", msg)
@@ -474,4 +499,63 @@ func TestAllOK(t *testing.T) {
 		include test00, test01, test05, test06, test07 in list of all issues
 
 	*/
+
+	if true { //used to generate contents for experiments.json, used by TestEmailBody
+		sj, err := yaml.Marshal(s.Experiments)
+		assert.NoError(t, err)
+		err = ioutil.WriteFile("experiments.yaml", sj, 0644)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func TestEmailBody(t *testing.T) {
+
+	s = config.New()
+
+	s.Config = config.Config{
+		EmailCc:      []string{"cc@test.org"},
+		EmailFrom:    "admin@test.org",
+		EmailHost:    "localhost",
+		EmailLink:    "https://app.test.org/tenant/status",
+		EmailSubject: "test",
+		EmailTo:      []string{"to@test.org"},
+	}
+
+	s.Now = func() time.Time { return time.Date(2022, 11, 5, 0, 2, 10, 0, time.UTC) }
+
+	experimentsYAML, err := ioutil.ReadFile("experiments.yaml")
+	if err != nil {
+		log.Printf("yamlFile.Get err   #%v ", err)
+		panic(err)
+	}
+
+	var se map[string]config.Report
+
+	err = yaml.Unmarshal(experimentsYAML, &se)
+
+	assert.NoError(t, err)
+
+	s.Experiments = se
+
+	alerts := make(map[string]bool)
+	alerts["test01"] = false
+
+	systemAlerts := []string{}
+
+	msg := EmailBody(s, alerts, systemAlerts)
+
+	exp0 := ""
+
+	assert.Equal(t, exp0, msg)
+
+	systemAlerts = []string{"some system issue or other"}
+
+	msg = EmailBody(s, alerts, systemAlerts)
+
+	exp1 := ""
+
+	assert.Equal(t, exp1, msg)
+
 }

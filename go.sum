@@ -605,8 +605,12 @@ github.com/practable/book v0.3.12-0.20230804082500-b532994076b1 h1:gnAqWbJaGQTLC
 github.com/practable/book v0.3.12-0.20230804082500-b532994076b1/go.mod h1:fWhHbfJXeQBBc/JzVgGaBejf+t97V5g7kSOK3FWKQJ0=
 github.com/practable/jump v0.3.3-0.20230727224731-266ee2a11518 h1:8BvnjJemqN/0BBfMcv6I3ubgQYeb3Vmv7QHyh3Q0gvM=
 github.com/practable/jump v0.3.3-0.20230727224731-266ee2a11518/go.mod h1:nUvgNsAyMMbPeEUdxL4Ox3bTm7KTq4euv347Uej4C8U=
+github.com/practable/jump v0.3.3-0.20230805153610-95302192c149 h1:k2ggyZq2DDolXrcTTevwCd4Zelvtu8KLHyF6nH6nSlE=
+github.com/practable/jump v0.3.3-0.20230805153610-95302192c149/go.mod h1:nUvgNsAyMMbPeEUdxL4Ox3bTm7KTq4euv347Uej4C8U=
 github.com/practable/relay v0.6.7-0.20230727225526-1455418648cf h1:3bMG2SMbZRhsfG62RYYCSST46OW3ner7yLB0pFB+lwU=
 github.com/practable/relay v0.6.7-0.20230727225526-1455418648cf/go.mod h1:EMEhinClKc8PUrzwwXeS56dQ6TcQ3NFkQz/P7HdPRio=
+github.com/practable/relay v0.6.7-0.20230805153624-a3efdca32666 h1:+aT4ag5GIt5NmXiWvHPKKS1K8sLy974eufLpxrAyH20=
+github.com/practable/relay v0.6.7-0.20230805153624-a3efdca32666/go.mod h1:EMEhinClKc8PUrzwwXeS56dQ6TcQ3NFkQz/P7HdPRio=
 github.com/prometheus/client_golang v0.9.1/go.mod h1:7SWBe2y4D6OKWSNQJUaRYU/AaXPKyh/dDVn+NZz0KFw=
 github.com/prometheus/client_golang v1.0.0/go.mod h1:db9x61etRT2tGnBNRi70OPL5FsnadC4Ky3P0J6CfImo=
 github.com/prometheus/client_golang v1.4.0/go.mod h1:e9GMxYsXl05ICDXkRhurwBS4Q3OK1iX/F2sw+iXX5zU=

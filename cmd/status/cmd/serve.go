@@ -62,7 +62,8 @@ export STATUS_EMAIL_PASSWORD=something
 export STATUS_EMAIL_PORT=587
 export STATUS_EMAIL_SUBJECT=app.practable.io/tenant
 export STATUS_EMAIL_TO="alpha@a.org"
-export STATUS_HEALTH_LAST=10s
+export STATUS_HEALTH_LAST_ACTIVE=10s
+export STATUS_HEALTH_LAST_CHECKED=30s
 export STATUS_HEALTH_LOG_EVERY=10m
 export STATUS_HEALTH_EVENTS=100
 export STATUS_HEALTH_STARTUP=1m
@@ -107,7 +108,9 @@ status serve
 		viper.SetDefault("email_subject", "")
 		viper.SetDefault("email_to", []string{})
 
-		viper.SetDefault("health_last", "10s") // last TX should be more recent than this
+		viper.SetDefault("health_last_active", "10s")  // last stream Tx should be more recent than this
+		viper.SetDefault("health_last_checked", "10s") // last relay/jump report should be more recent than this
+
 		viper.SetDefault("health_log_every", "1h")
 		viper.SetDefault("health_events", "100") // max number of health events logged per experiment
 		viper.SetDefault("health_startup", "1m") // don't record health history until startup period is over
@@ -153,7 +156,8 @@ status serve
 		emailTo := viper.GetStringSlice("email_to")
 
 		healthLogEveryStr := viper.GetString("health_log_every")
-		healthLastStr := viper.GetString("health_last")
+		healthLastActiveStr := viper.GetString("health_last_active")
+		healthLastCheckedStr := viper.GetString("health_last_checked")
 		healthStartupStr := viper.GetString("health_startup")
 		healthEvents := viper.GetInt("health_events")
 
@@ -246,10 +250,16 @@ status serve
 		}
 
 		// Parse durations
-		healthLast, err := time.ParseDuration(healthLastStr)
+		healthLastActive, err := time.ParseDuration(healthLastActiveStr)
 
 		if err != nil {
-			fmt.Print("cannot parse duration in STATUS_HEALTH_LAST=" + healthLastStr)
+			fmt.Print("cannot parse duration in STATUS_HEALTH_LAST=" + healthLastActiveStr)
+			os.Exit(1)
+		}
+		healthLastChecked, err := time.ParseDuration(healthLastCheckedStr)
+
+		if err != nil {
+			fmt.Print("cannot parse duration in STATUS_HEALTH_LAST=" + healthLastCheckedStr)
 			os.Exit(1)
 		}
 
@@ -357,7 +367,9 @@ status serve
 		log.Infof("Email subject: [%s]", emailSubject)
 		log.Infof("Email to: [%s]", emailTo)
 		log.Infof("Email CC: [%s]", emailCc)
-		log.Infof("Health last: [%s]", healthLast)
+		log.Infof("Health last active: [%s]", healthLastActive)
+		log.Infof("Health last checked: [%s]", healthLastChecked)
+
 		log.Infof("Health log every: [%s]", healthLogEvery)
 		log.Infof("Health startup: [%s]", healthStartup)
 		log.Infof("Health events: [%d]", healthEvents)
@@ -427,7 +439,8 @@ status serve
 			EmailSubject:        emailSubject,
 			EmailTo:             emailTo,
 			HealthEvents:        healthEvents,
-			HealthLast:          healthLast,
+			HealthLastActive:    healthLastActive,
+			HealthLastChecked:   healthLastChecked,
 			HealthLogEvery:      healthLogEvery,
 			HealthStartup:       healthStartup,
 			HostBook:            hostBook,
