@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"path"
 	"regexp"
 	"strconv"
@@ -446,7 +447,9 @@ func updateHealth(s *config.Status) {
 
 	count := strconv.Itoa(len(alerts))
 
-	auth := smtp.PlainAuth("", s.Config.EmailFrom, s.Config.EmailPassword, s.Config.EmailHost)
+	emailAuthType := strings.TrimSpace(strings.ToLower(s.Config.EmailAuthType))
+
+	plainAuth := smtp.PlainAuth("", s.Config.EmailFrom, s.Config.EmailPassword, s.Config.EmailHost)
 
 	toHeader := strings.Join(s.Config.EmailTo, ",")
 	ccHeader := strings.Join(s.Config.EmailCc, ",")
@@ -490,8 +493,21 @@ func updateHealth(s *config.Status) {
 
 	log.Errorf(msg)
 	// EmailTo must be []string
+
 	hostPort := s.Config.EmailHost + ":" + strconv.Itoa(s.Config.EmailPort)
-	err := smtp.SendMail(hostPort, auth, s.Config.EmailFrom, receivers, []byte(msg))
+
+	log.WithFields(log.Fields{"s.Config.EmailHost": s.Config.EmailHost, "s.Config.EmailPort": s.Config.EmailPort, "hostPort": hostPort, "s.Config.EmailFrom": s.Config.EmailFrom, "receivers": receivers}).Debug("Email host")
+
+	var err error
+
+	switch emailAuthType {
+	case "plain":
+		err = smtp.SendMail(hostPort, plainAuth, s.Config.EmailFrom, receivers, []byte(msg))
+	case "none":
+		err = smtp.SendMail(hostPort, nil, s.Config.EmailFrom, receivers, []byte(msg))
+	default:
+		err = fmt.Errorf("Email auth type unknown (%s), should be [plain, none]", s.Config.EmailAuthType)
+	}
 
 	if err != nil {
 

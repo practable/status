@@ -53,6 +53,7 @@ variables, for example:
 export STATUS_BASEPATH_BOOK=/tenant/book
 export STATUS_BASEPATH_JUMP=/tenant/jump
 export STATUS_BASEPATH_RELAY=/tenant/relay
+export STATUS_EMAIL_AUTH_TYPE=plain
 export STATUS_EMAIL_CC="beta@a.org"
 export STATUS_EMAIL_FROM=other@b.org
 export STATUS_EMAIL_HOST=stmp.b.org
@@ -96,6 +97,7 @@ status serve
 		viper.SetDefault("basepath_jump", "/")
 		viper.SetDefault("basepath_relay", "/")
 
+		viper.SetDefault("email_auth_type", "none")
 		viper.SetDefault("email_cc", []string{})
 		viper.SetDefault("email_from", "") // "" so we can check it's been provided
 		viper.SetDefault("email_host", "")
@@ -140,6 +142,7 @@ status serve
 		basepathJump := viper.GetString("basepath_jump")
 		basepathRelay := viper.GetString("basepath_relay")
 
+		emailAuthType := viper.GetString("email_auth_type")
 		emailCc := viper.GetStringSlice("email_cc")
 		emailFrom := viper.GetString("email_from")
 		emailHost := viper.GetString("email_host")
@@ -414,6 +417,7 @@ status serve
 			BasepathBook:        basepathBook,
 			BasepathJump:        basepathJump,
 			BasepathRelay:       basepathRelay,
+			EmailAuthType:       emailAuthType,
 			EmailCc:             emailCc,
 			EmailFrom:           emailFrom,
 			EmailHost:           emailHost,

@@ -20,6 +20,16 @@ Email alerts are sent on status changes to both jump and streams.
 
 An experiment without a jump connection can still be used so long as the required streams are present, although it is an issue for the maintainer to handle, so email alerts are sent for changes to jump and streams health events (an event is a change in the health).
 
+### Criteria
+
+#### Jump
+
+Jump connections remain dormant with no communication, until a client wishes to log in. At which point, there is traffic recorded in the `rx` section of the statistics. A healthy jump connection is simply one that exists - there is no need to check the stats.
+
+#### Relay
+
+Healthy stream connections from an experiment have transmitted recently, typically every few seconds or more frequently. Rather than define a healthy stream, as this requires some quite detailed checks, we can instead detect definitely unhealthy streams and alert on those. An unhealthy stream is defined as NOT having transmitted wtihin the last 10s. 
+
 
 ## Usage
 

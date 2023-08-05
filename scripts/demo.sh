@@ -3,6 +3,7 @@ export MAIL=~/secret/zoho/mail.yaml
 export STATUS_BASEPATH_BOOK=/dev/book
 export STATUS_BASEPATH_JUMP=/dev/jump
 export STATUS_BASEPATH_RELAY=/dev/access
+export STATUS_EMAIL_AUTH_TYPE=plain
 export STATUS_EMAIL_FROM=$(yq -r '.username' $MAIL)
 export STATUS_EMAIL_HOST=$(yq -r '.host' $MAIL)
 export STATUS_EMAIL_LINK=https://app.practable.io/dev/status

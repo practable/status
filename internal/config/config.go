@@ -12,6 +12,7 @@ type Config struct {
 	BasepathBook        string
 	BasepathJump        string
 	BasepathRelay       string
+	EmailAuthType       string
 	EmailFrom           string
 	EmailHost           string
 	EmailLink           string

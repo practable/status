@@ -34,6 +34,7 @@ var manifestYAML []byte
 var manifestJSON []byte
 var r *rc.Status
 var s *config.Status
+var SMTPServer *smtpmock.Server
 var timeout time.Duration
 
 type TestReports struct {
@@ -241,7 +242,7 @@ func TestMain(m *testing.M) {
 	*  start mock smtp
 	****************************/
 
-	SMTPServer := smtpmock.New(smtpmock.ConfigurationAttr{
+	SMTPServer = smtpmock.New(smtpmock.ConfigurationAttr{
 		PortNumber: portSMTP,
 	})
 
@@ -260,9 +261,10 @@ func TestMain(m *testing.M) {
 		BasepathBook:        "/api/v1",
 		BasepathJump:        "/api/v1",
 		BasepathRelay:       "",
+		EmailAuthType:       "none",
 		EmailCc:             []string{"cc@test.org"},
 		EmailFrom:           "admin@test.org",
-		EmailHost:           hostSMTP,
+		EmailHost:           "localhost",
 		EmailLink:           "http://[::]:" + strconv.Itoa(portServe),
 		EmailPassword:       "",
 		EmailPort:           portSMTP,
@@ -438,6 +440,11 @@ func TestAllOK(t *testing.T) {
 	setNow(time.Date(2022, 11, 5, 0, 5, 0, 0, time.UTC))
 
 	time.Sleep(100 * time.Millisecond)
+
+	msg := SMTPServer.Messages()
+
+	fmt.Printf("\n\nEmails\n%+v\n\n\n", msg)
+
 	// prepare reports
 	// send reports
 	// check no health events yet
