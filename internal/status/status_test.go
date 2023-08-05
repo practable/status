@@ -496,7 +496,12 @@ func TestStatus(t *testing.T) {
 	assert.Equal(t, false, s.Experiments["test04"].Available)
 	assert.Equal(t, true, s.Experiments["test05"].Available)
 	assert.Equal(t, false, s.Experiments["test06"].Available)
-	assert.Equal(t, true, s.Experiments["test07"].Available)
+	assert.Equal(t, false, s.Experiments["test07"].Available)
+
+	assert.Equal(t, true, s.Experiments["test06"].StreamReports["test06-st-video"].Stats.Tx.Never)
+	assert.Equal(t, false, s.Experiments["test07"].StreamReports["test07-st-video"].Stats.Tx.Never)
+	t.Logf("test06-st-video.Tx: %+v", s.Experiments["test06"].StreamReports["test06-st-video"].Stats.Tx)
+	t.Logf("test07-st-video.Tx: %+v", s.Experiments["test07"].StreamReports["test07-st-video"].Stats.Tx)
 
 	setNow(t, time.Date(2022, 11, 5, 0, 1, 55, 0, time.UTC)) //
 

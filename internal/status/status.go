@@ -428,7 +428,13 @@ func updateHealth(s *config.Status) {
 		for sk := range v.StreamOK {
 			recent := (v.StreamReports[sk].Stats.Tx.Last < s.Config.HealthLastActive)
 			never := v.StreamReports[sk].Stats.Tx.Never
-			sm[sk] = recent && !never
+			active := recent && !never
+			if !active {
+				log.WithFields(log.Fields{"stream": sk, "never": never, "recent": recent, "last": v.StreamReports[sk].Stats.Tx.Last}).Errorf("inactive stream")
+			} else {
+				log.WithFields(log.Fields{"stream": sk, "never": never, "recent": recent, "last": v.StreamReports[sk].Stats.Tx.Last}).Debugf("active stream")
+			}
+			sm[sk] = active
 		}
 
 		streamsActive[k] = sm
