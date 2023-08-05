@@ -10,7 +10,7 @@ require (
 	github.com/go-openapi/strfmt v0.21.7
 	github.com/go-openapi/swag v0.22.4
 	github.com/go-openapi/validate v0.22.1
-	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/icza/gog v0.0.0-20220909135443-35d926f98ec3
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/mocktools/go-smtp-mock/v2 v2.1.0
@@ -38,7 +38,6 @@ require (
 	github.com/go-openapi/analysis v0.21.4 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.20.0 // indirect
-	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect

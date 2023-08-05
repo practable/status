@@ -8,15 +8,16 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
 	"testing"
 	"time"
 
 	rt "github.com/go-openapi/runtime"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v4"
 	smtpmock "github.com/mocktools/go-smtp-mock/v2"
 	"github.com/phayes/freeport"
-	"github.com/practable/book/pkg/book"
+	bc "github.com/practable/book/pkg/resource"
 	jc "github.com/practable/jump/pkg/status"
 	rc "github.com/practable/relay/pkg/status"
 	"github.com/practable/status/internal/config"
@@ -140,40 +141,32 @@ func TestMain(m *testing.M) {
 	*  configure & start book
 	****************************/
 
-	bookConfig := book.DefaultConfig()
-	bookConfig.Port = portBook
-	bookConfig.StoreSecret = secretBook
-	bookConfig.RelaySecret = secretRelay
-	bookConfig.Now = func() time.Time { return *ctp }
+	// cannot run book from pkg/book because the jwt middle layer for
+	// status and book collide, and use the host value of the last started
+	// service, in this case book rejects with "token aud does not match this host"
+	// and instead wants the host that status has. This cannot really be solved
+	// by tweaking the jwt library because we need both to use jwt/v4
+	// so we start book from commmand line
+	// this means book must have current system time.
+	// we just have to sort tokens accordingly
 
-	go book.Run(ctx, bookConfig)
+	/*
+		bookConfig := book.DefaultConfig()
+		bookConfig.Port = portBook
+		bookConfig.StoreSecret = secretBook
+		bookConfig.RelaySecret = secretRelay
+		bookConfig.Now = func() time.Time { return *ctp }
 
-	bookAdminToken, err := book.AdminToken(bookConfig, 60, "someuser")
+		go book.Run(ctx, bookConfig)
+		time.Sleep(500 * time.Millisecond) //let book start! (100ms is too soon)
+	*/
+
+	cmd := exec.Command("./install.sh")
+	err := cmd.Run()
 	if err != nil {
 		panic(err)
 	}
-
-	time.Sleep(500 * time.Millisecond) //let book start! (100ms is too soon)
-
-	// upload manifest
-	client := &http.Client{}
-	bodyReader := bytes.NewReader(manifestJSON)
-
-	req, err := http.NewRequest("PUT", schemeBook+"://"+hostBook+"/api/v1/admin/manifest", bodyReader)
-	if err != nil {
-		panic(err)
-	}
-	req.Header.Add("Authorization", bookAdminToken)
-	req.Header.Add("Content-Type", "application/json")
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	if resp.StatusCode != 200 {
-		log.Fatalf("Book manifest did not load %v", resp)
-		fmt.Printf("\n\n%v\n\n", string(manifestJSON))
-
-	}
+	cmd := exec.Command("./book.sh")
 
 	/***************************************************************************/
 	// start dummy jump and relay in an elegant way
@@ -252,15 +245,15 @@ func TestMain(m *testing.M) {
 	}
 
 	/***************************
-	*  start status server
+	*  define config for status server
 	****************************/
 
 	time.Sleep(100 * time.Millisecond) // let other services start
 
 	s = config.New()
 	s.Config = config.Config{
-		BasepathBook:        "/api/v1",
-		BasepathJump:        "/api/v1",
+		BasepathBook:        "",
+		BasepathJump:        "",
 		BasepathRelay:       "",
 		EmailAuthType:       "none",
 		EmailCc:             []string{"cc@test.org"},
@@ -276,7 +269,7 @@ func TestMain(m *testing.M) {
 		HealthLastChecked:   time.Minute,
 		HealthLogEvery:      time.Hour,   //prevent interfering with test
 		HealthStartup:       time.Minute, // won't cause actual delays
-		HostBook:            hostBook,
+		HostBook:            "[::]:" + strconv.Itoa(portBook),
 		HostJump:            hostJump,
 		HostRelay:           hostRelay,
 		Port:                portServe,
@@ -293,6 +286,45 @@ func TestMain(m *testing.M) {
 		TimeoutBook:         time.Minute,
 	}
 	s.Now = func() time.Time { return *ctp }
+
+	/***************************
+	*  upload load manifest (uses status config info)
+	****************************/
+
+	audience := s.Config.SchemeBook + "://" + s.Config.HostBook + s.Config.BasepathBook
+	subject := "status-server"
+	secret := s.Config.SecretBook
+	scopes := []string{"booking:admin"}
+
+	iat := s.Now()
+	nbf := s.Now().Add(-1 * time.Second)
+	exp := s.Now().Add(time.Minute)
+
+	bookAdminToken, err := bc.NewToken(audience, subject, secret, scopes, iat, nbf, exp)
+	log.Infof("book token for %s: %s", audience, string(bookAdminToken))
+	// upload manifest
+	client := &http.Client{}
+	bodyReader := bytes.NewReader(manifestJSON)
+
+	req, err := http.NewRequest("PUT", schemeBook+"://"+hostBook+"/api/v1/admin/manifest", bodyReader)
+	if err != nil {
+		panic(err)
+	}
+	req.Header.Add("Authorization", bookAdminToken)
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	if resp.StatusCode != 200 {
+		log.Fatalf("Book manifest did not load %v", resp)
+		fmt.Printf("\n\n%v\n\n", string(manifestJSON))
+
+	}
+
+	/***************************
+	*  Start status server
+	****************************/
 
 	// supply jump and relay clients so we can mock messages
 
@@ -440,39 +472,39 @@ func TestAllOK(t *testing.T) {
 	}
 
 	setNow(t, time.Date(2022, 11, 5, 0, 2, 10, 0, time.UTC))
-	/*
-			jr = reports.Jump["set02"].Reports
-			rr = reports.Relay["set02"].Reports
 
-			j.Status <- jr
-			r.Status <- rr
+	jr = reports.Jump["set02"].Reports
+	rr = reports.Relay["set02"].Reports
 
-			time.Sleep(100 * time.Millisecond)
+	j.Status <- jr
+	r.Status <- rr
 
-			if verbose {
+	time.Sleep(100 * time.Millisecond)
 
-				fmt.Printf("\n\nSET02\n%+v\n\n\n", s.Experiments)
-			}
+	if verbose {
 
-			setNow(t, time.Date(2022, 11, 5, 0, 0, 15, 0, time.UTC))
+		fmt.Printf("\n\nSET02\n%+v\n\n\n", s.Experiments)
+	}
 
-			jr = reports.Jump["set03"].Reports
-			rr = reports.Relay["set03"].Reports
+	setNow(t, time.Date(2022, 11, 5, 0, 0, 15, 0, time.UTC))
 
-			j.Status <- jr
-			r.Status <- rr
+	jr = reports.Jump["set03"].Reports
+	rr = reports.Relay["set03"].Reports
 
-			time.Sleep(time.Second)
+	j.Status <- jr
+	r.Status <- rr
 
-			if verbose {
+	time.Sleep(time.Second)
 
-				fmt.Printf("\n\nSET03\n%+v\n\n\n", s.Experiments)
-			}
+	if verbose {
 
-			setNow(t, time.Date(2022, 11, 5, 0, 0, 20, 0, time.UTC))
+		fmt.Printf("\n\nSET03\n%+v\n\n\n", s.Experiments)
+	}
 
-		time.Sleep(100 * time.Millisecond)
-	*/
+	setNow(t, time.Date(2022, 11, 5, 0, 0, 20, 0, time.UTC))
+
+	time.Sleep(100 * time.Millisecond)
+
 	msg := SMTPServer.Messages()
 
 	fmt.Printf("\n\nEmails\n%+v\n\n\n", msg)

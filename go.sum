@@ -348,8 +348,6 @@ github.com/gobwas/ws v1.1.0/go.mod h1:nzvNcVha5eUziGrbxFCo6qFIojQHjJV5cLYIbezhfL
 github.com/godbus/dbus/v5 v5.0.4/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
 github.com/gogo/protobuf v1.1.1/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
 github.com/gogo/protobuf v1.3.2/go.mod h1:P1XiOD3dCwIKUDQYPy72D8LYyHL2YPYrpS2s69NZV8Q=
-github.com/golang-jwt/jwt v3.2.2+incompatible h1:IfV12K8xAKAnZqdXVzCZ+TOjboZ2keLg81eXfW3O+oY=
-github.com/golang-jwt/jwt v3.2.2+incompatible/go.mod h1:8pz2t5EyA70fFQQSrl6XZXzqecmYZeUEB8OUGHkxJ+I=
 github.com/golang-jwt/jwt/v4 v4.3.0/go.mod h1:/xlHOz8bRuivTWchD4jCa+NbatV+wEUSzwAxVc6locg=
 github.com/golang-jwt/jwt/v4 v4.5.0 h1:7cYmW1XlMY7h7ii7UhUyChSgS5wUJEnm9uZVTGqOWzg=
 github.com/golang-jwt/jwt/v4 v4.5.0/go.mod h1:m21LjoU+eqJr34lmDMbreY2eSTRJ1cv77w39/MY0Ch0=
@@ -603,12 +601,8 @@ github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndr
 github.com/posener/complete v1.2.3/go.mod h1:WZIdtGGp+qx0sLrYKtIRAruyNpv6hFCicSgv7Sy7s/s=
 github.com/practable/book v0.3.12-0.20230804082500-b532994076b1 h1:gnAqWbJaGQTLCXgkBM18fnJIR6OHQrSLdSgTI+79JZo=
 github.com/practable/book v0.3.12-0.20230804082500-b532994076b1/go.mod h1:fWhHbfJXeQBBc/JzVgGaBejf+t97V5g7kSOK3FWKQJ0=
-github.com/practable/jump v0.3.3-0.20230727224731-266ee2a11518 h1:8BvnjJemqN/0BBfMcv6I3ubgQYeb3Vmv7QHyh3Q0gvM=
-github.com/practable/jump v0.3.3-0.20230727224731-266ee2a11518/go.mod h1:nUvgNsAyMMbPeEUdxL4Ox3bTm7KTq4euv347Uej4C8U=
 github.com/practable/jump v0.3.3-0.20230805153610-95302192c149 h1:k2ggyZq2DDolXrcTTevwCd4Zelvtu8KLHyF6nH6nSlE=
 github.com/practable/jump v0.3.3-0.20230805153610-95302192c149/go.mod h1:nUvgNsAyMMbPeEUdxL4Ox3bTm7KTq4euv347Uej4C8U=
-github.com/practable/relay v0.6.7-0.20230727225526-1455418648cf h1:3bMG2SMbZRhsfG62RYYCSST46OW3ner7yLB0pFB+lwU=
-github.com/practable/relay v0.6.7-0.20230727225526-1455418648cf/go.mod h1:EMEhinClKc8PUrzwwXeS56dQ6TcQ3NFkQz/P7HdPRio=
 github.com/practable/relay v0.6.7-0.20230805153624-a3efdca32666 h1:+aT4ag5GIt5NmXiWvHPKKS1K8sLy974eufLpxrAyH20=
 github.com/practable/relay v0.6.7-0.20230805153624-a3efdca32666/go.mod h1:EMEhinClKc8PUrzwwXeS56dQ6TcQ3NFkQz/P7HdPRio=
 github.com/prometheus/client_golang v0.9.1/go.mod h1:7SWBe2y4D6OKWSNQJUaRYU/AaXPKyh/dDVn+NZz0KFw=

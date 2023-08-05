@@ -126,6 +126,23 @@ func connectBook(ctx context.Context, s *config.Status) {
 
 	// basepath has slightly different interpretations between our config
 	// and how it is used in bc.Config. TODO check this works.
+
+	UpdateResourcesFromBook(ctx, s) // do an intial update in case we aren't querying very often
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(s.Config.QueryBookEvery):
+			UpdateResourcesFromBook(ctx, s)
+			updateHealth(s) //force an update in case connections to relay and jump are down
+		}
+
+	}
+}
+
+func UpdateResourcesFromBook(ctx context.Context, s *config.Status) {
+
 	c := bc.Config{
 		BasePath: "/api/v1",
 		Host:     s.Config.HostBook + s.Config.BasepathBook,
@@ -133,54 +150,54 @@ func connectBook(ctx context.Context, s *config.Status) {
 		Timeout:  time.Duration(5 * time.Second),
 	}
 
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(s.Config.QueryBookEvery):
-			// make token with updated times
-			audience := s.Config.SchemeBook + "://" + s.Config.HostBook + s.Config.BasepathBook
-			subject := "status-server"
-			secret := s.Config.SecretBook
-			scopes := []string{"booking:admin"}
+	// make token with updated times
+	audience := s.Config.SchemeBook + "://" + s.Config.HostBook + s.Config.BasepathBook
+	subject := "status-server"
+	secret := s.Config.SecretBook
+	scopes := []string{"booking:admin"}
 
-			iat := s.Now()
-			nbf := s.Now().Add(-1 * time.Second)
-			exp := s.Now().Add(s.Config.QueryBookEvery)
+	iat := s.Now()
+	nbf := s.Now().Add(-1 * time.Second)
+	exp := s.Now().Add(s.Config.QueryBookEvery)
 
-			tk, err := bc.NewToken(audience, subject, secret, scopes, iat, nbf, exp)
+	tk, err := bc.NewToken(audience, subject, secret, scopes, iat, nbf, exp)
 
-			c.Token = tk
+	c.Token = tk
 
-			if err != nil {
-				log.Errorf("connectBook error making token was %s", err.Error())
-				continue
-			}
+	log.WithFields(log.Fields{"basepath": c.BasePath, "host": c.Host, "scheme": c.Scheme, "token": c.Token}).Debug("book connection details")
 
-			resources, err := c.GetResources()
+	if err != nil {
+		log.Errorf("connectBook error making token was %s", err.Error())
+		return
+	}
 
-			if err != nil {
-				log.Errorf("connectBook error getting resources was %s", err.Error())
-				continue
-			}
+	resources, err := c.GetResources()
 
-			for _, v := range resources {
-				r := v
-				streams := make(map[string]bool)
-				for _, stream := range r.Streams {
-					fullStream := r.TopicStub + "-" + stream //this convention comes from the way manifest handle stream names
-					streams[fullStream] = true
-				}
-				ex := s.Experiments[r.TopicStub]
-				ex.StreamRequired = streams
-				ex.ResourceName = r.Name
-				ex.LastFoundInManifest = s.Now()
-				s.Experiments[r.TopicStub] = ex
-			}
+	if err != nil {
+		log.Errorf("connectBook error getting resources was %s", err.Error())
+		return
+	}
 
-			updateHealth(s) //force an update in case connections to relay and jump are down
+	log.Debugf("Book Resources:\n%+v\n", resources)
+
+	for _, v := range resources {
+		r := v
+		streams := make(map[string]bool)
+		for _, stream := range r.Streams {
+			fullStream := r.TopicStub + "-" + stream //this convention comes from the way manifest handle stream names
+			streams[fullStream] = true
 		}
 
+		// initialise experiment's entry if not yet present
+		if _, ok := s.Experiments[r.TopicStub]; !ok {
+			s.Experiments[r.TopicStub] = NewReport(s) //pass status to get time
+		}
+
+		ex := s.Experiments[r.TopicStub]
+		ex.StreamRequired = streams
+		ex.ResourceName = r.Name
+		ex.LastFoundInManifest = s.Now()
+		s.Experiments[r.TopicStub] = ex
 	}
 }
 
@@ -349,8 +366,6 @@ func updateHealth(s *config.Status) {
 
 	alerts := make(map[string]bool)
 
-	hm := make(map[string]config.HealthyIssues)
-
 	now := s.Now() //keep same for all entries from this set of reports
 
 	systemAlerts := []string{}
@@ -402,42 +417,68 @@ func updateHealth(s *config.Status) {
 		systemAlerts = append(systemAlerts, msg)
 	}
 
+	// update experiments that are showing stale checks
+	for k, v := range jumpStale {
+
+		expt := s.Experiments[k]
+
+		es := expt.StreamOK
+
+		for sk := range es {
+			expt.StreamOK[sk] = !v // v is true if stale, so invert
+		}
+		s.Experiments[k] = expt
+	}
+
+	for k, v := range streamsStale {
+
+		expt := s.Experiments[k]
+
+		expt.JumpOK = !v //v is true if stale, so invert
+
+		s.Experiments[k] = expt
+
+	}
+
+	// check for issues
+
+	// health events map
+	hm := make(map[string]config.HealthyIssues)
+
+	// available map
+	am := make(map[string]bool)
+
 	for k, v := range s.Experiments {
 
 		// jump must be ok
 		h := true
+		a := true
 		issues := []string{}
 
 		if !v.JumpOK {
-			h = false
-			issues = append(issues, "jump present but not ok")
-		}
-
-		// jump must have been recently checked
-		if !(v.LastCheckedJump.Add(s.Config.HealthLastChecked)).After(now) {
-			h = false
-			issues = append(issues, "jump missing")
+			h = false //no jump is unhealthy BUT
+			// don't change availability based on jump, leave a true for now
+			issues = append(issues, "jump")
 		}
 
 		// all required streams must be present
 		for stream, _ := range v.StreamRequired {
 			if _, ok := v.StreamOK[stream]; !ok {
 				h = false
-				issues = append(issues, "required stream missing ("+stream+")")
+				a = false
+				issues = append(issues, "missing required "+stream)
 			}
 		}
 
-		// the streams must have been recently checked
-		if !(v.LastCheckedStreams.Add(s.Config.HealthLastChecked)).After(now) {
-			h = false
-			issues = append(issues, "no current streams")
-		}
+		// no need to check for stale streams explicitly - already done by the stale checks which
+		// change the maps
 
 		// all streams must be healthy (even if not required)
 		for stream, sok := range v.StreamOK {
 			if !sok {
 				h = false
-				issues = append(issues, "stream unhealthy ("+stream+")")
+				// don't change the availability, if all required streams are good, it can be available for booking
+				issues = append(issues, "unhealthy "+stream)
 			}
 		}
 
@@ -445,6 +486,9 @@ func updateHealth(s *config.Status) {
 			Healthy: h,
 			Issues:  issues,
 		}
+
+		// update availability map
+		am[k] = a
 
 	}
 
@@ -487,6 +531,69 @@ func updateHealth(s *config.Status) {
 
 		expt[k] = r
 	}
+
+	// set resource availability where it has changed, according to availability map am
+
+	c := bc.Config{
+		BasePath: "/api/v1",
+		Host:     s.Config.HostBook + s.Config.BasepathBook,
+		Scheme:   s.Config.SchemeBook,
+		Timeout:  time.Duration(5 * time.Second), //local server, should respond fast
+	}
+
+	audience := s.Config.SchemeBook + "://" + s.Config.HostBook + s.Config.BasepathBook
+	subject := "status-server"
+	secret := s.Config.SecretBook
+	scopes := []string{"booking:admin"}
+
+	iat := s.Now()
+	nbf := s.Now().Add(-1 * time.Second)
+	exp := s.Now().Add(time.Hour) // good for > 500 requests at 5sec timeout
+
+	tk, err := bc.NewToken(audience, subject, secret, scopes, iat, nbf, exp)
+
+	c.Token = tk
+
+	if err != nil {
+		log.Errorf("no changes in availability possible because error making book token was %s", err.Error())
+	} else { // no point in trying to set availability unless token is ok
+
+		for k, v := range am {
+
+			r := expt[k]
+
+			if now.Before(r.FirstChecked.Add(s.Config.HealthStartup)) {
+				continue // ignore for now in case this is a status server restart - we'll be able to take anything unhealthy offline within config.HealthStartup of starting the status server
+			}
+
+			if r.Available != v {
+
+				//change on book server
+				err := c.SetResourceAvailability(r.ResourceName, v, "status server: "+s.Now().String())
+
+				if err != nil {
+					log.Errorf("changeAvailability error setting availability for %s(%s) was %s", k, r.ResourceName, err.Error())
+					continue
+				}
+
+				// check change, and update status
+				status, err := c.GetResourceAvailability(r.ResourceName)
+				if err != nil {
+					log.Errorf("changeAvailability error getting availability for %s(%s) was %s", k, r.ResourceName, err.Error())
+					continue
+				}
+
+				r.Available = status.Available
+
+				if r.Available != v {
+					log.Errorf("changeAvailability error setting correct availability have %v want %v", r.Available, v)
+				}
+
+			}
+		}
+
+	}
+
 	s.Experiments = expt
 
 	// skip email if no alerts
@@ -509,8 +616,6 @@ func updateHealth(s *config.Status) {
 	receivers := append(s.Config.EmailTo, s.Config.EmailCc...)
 
 	log.WithFields(log.Fields{"s.Config.EmailHost": s.Config.EmailHost, "s.Config.EmailPort": s.Config.EmailPort, "hostPort": hostPort, "s.Config.EmailFrom": s.Config.EmailFrom, "receivers": receivers}).Debug("Email host")
-
-	var err error
 
 	switch emailAuthType {
 	case "plain":
