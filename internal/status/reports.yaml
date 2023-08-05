@@ -13,7 +13,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.100"
+        remoteAddr: "123.123.1.100"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -30,7 +30,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.102"
+        remoteAddr: "123.123.1.102"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -47,7 +47,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.103"
+        remoteAddr: "123.123.1.103"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -64,7 +64,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.104"
+        remoteAddr: "123.123.1.104"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -81,7 +81,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.105"
+        remoteAddr: "123.123.1.105"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -93,12 +93,12 @@ jump:
             Size: 1000
             FPS: 25
             Never: false
-      - topic: test65
+      - topic: test06
         canRead: true
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.106"
+        remoteAddr: "123.123.1.106"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -115,7 +115,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.107"
+        remoteAddr: "123.123.1.107"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -132,7 +132,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.107"
+        remoteAddr: "123.123.1.107"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -154,7 +154,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.100"
+        remoteAddr: "123.123.1.100"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -171,7 +171,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -188,7 +188,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.103"
+        remoteAddr: "123.123.1.103"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -205,7 +205,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.104"
+        remoteAddr: "123.123.1.104"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -222,7 +222,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.105"
+        remoteAddr: "123.123.1.105"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -239,7 +239,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.106"
+        remoteAddr: "123.123.1.106"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -256,7 +256,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.107"
+        remoteAddr: "123.123.1.107"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -273,7 +273,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.107"
+        remoteAddr: "123.123.1.107"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -294,7 +294,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.100"
+        remoteAddr: "123.123.1.100"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -311,7 +311,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.103"
+        remoteAddr: "123.123.1.103"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -328,7 +328,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.104"
+        remoteAddr: "123.123.1.104"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -345,7 +345,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.105"
+        remoteAddr: "123.123.1.105"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -362,7 +362,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.106"
+        remoteAddr: "123.123.1.106"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -379,7 +379,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.107"
+        remoteAddr: "123.123.1.107"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -396,7 +396,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.107"
+        remoteAddr: "123.123.1.107"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -416,7 +416,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.100"
+        remoteAddr: "123.123.1.100"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -433,7 +433,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:05:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -450,7 +450,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.102"
+        remoteAddr: "123.123.1.102"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -467,7 +467,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.103"
+        remoteAddr: "123.123.1.103"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -484,7 +484,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.104"
+        remoteAddr: "123.123.1.104"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -501,7 +501,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.105"
+        remoteAddr: "123.123.1.105"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -518,7 +518,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -535,7 +535,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -552,7 +552,7 @@ jump:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -576,7 +576,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -593,7 +593,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.102"
+        remoteAddr: "123.123.1.102"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -610,7 +610,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.103"
+        remoteAddr: "123.123.1.103"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -627,7 +627,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.103"
+        remoteAddr: "123.123.1.103"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -644,7 +644,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.104"
+        remoteAddr: "123.123.1.104"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -661,7 +661,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.104"
+        remoteAddr: "123.123.1.104"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -677,7 +677,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.105"
+        remoteAddr: "123.123.1.105"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -694,7 +694,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.105"
+        remoteAddr: "123.123.1.105"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -711,7 +711,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -728,7 +728,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -745,7 +745,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -762,7 +762,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -784,7 +784,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -801,7 +801,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.102"
+        remoteAddr: "123.123.1.102"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -818,7 +818,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.103"
+        remoteAddr: "123.123.1.103"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -835,7 +835,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.103"
+        remoteAddr: "123.123.1.103"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -852,7 +852,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.104"
+        remoteAddr: "123.123.1.104"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -869,7 +869,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.104"
+        remoteAddr: "123.123.1.104"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -880,7 +880,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.105"
+        remoteAddr: "123.123.1.105"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -897,7 +897,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.105"
+        remoteAddr: "123.123.1.105"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -914,7 +914,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -931,7 +931,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -948,7 +948,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -965,7 +965,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -988,7 +988,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1005,7 +1005,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.102"
+        remoteAddr: "123.123.1.102"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1022,7 +1022,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.103"
+        remoteAddr: "123.123.1.103"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1039,7 +1039,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.103"
+        remoteAddr: "123.123.1.103"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1056,7 +1056,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.104"
+        remoteAddr: "123.123.1.104"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1073,7 +1073,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.104"
+        remoteAddr: "123.123.1.104"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1083,7 +1083,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.105"
+        remoteAddr: "123.123.1.105"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1100,7 +1100,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.105"
+        remoteAddr: "123.123.1.105"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1117,7 +1117,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1134,7 +1134,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1151,7 +1151,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1168,7 +1168,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1193,7 +1193,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1210,7 +1210,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1227,7 +1227,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.102"
+        remoteAddr: "123.123.1.102"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1244,7 +1244,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.103"
+        remoteAddr: "123.123.1.103"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1261,7 +1261,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.103"
+        remoteAddr: "123.123.1.103"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1278,7 +1278,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.104"
+        remoteAddr: "123.123.1.104"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1295,7 +1295,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.104"
+        remoteAddr: "123.123.1.104"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1306,7 +1306,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.105"
+        remoteAddr: "123.123.1.105"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1323,7 +1323,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.105"
+        remoteAddr: "123.123.1.105"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1340,7 +1340,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1357,7 +1357,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1374,7 +1374,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1391,7 +1391,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:00:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1408,7 +1408,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:05:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1425,7 +1425,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:05:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1442,7 +1442,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:05:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1459,7 +1459,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:05:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read
@@ -1476,7 +1476,7 @@ relay:
         canWrite: true
         connectedAt: 2022-10-01T12:05:00+00:00
         expiresAt: 2023-10-01T12:00:00+00:00
-        RemoteAddr: "123.123.1.101"
+        remoteAddr: "123.123.1.101"
         userAgent: "unknown user agent"
         scopes:
           - read

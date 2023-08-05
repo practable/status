@@ -350,7 +350,50 @@ func updateHealth(s *config.Status) {
 
 	hm := make(map[string]config.HealthyIssues)
 
-	now := s.Now()
+	now := s.Now() //keep same for all entries from this set of reports
+
+	emailAlerts := []string{}
+
+	//checkedExperiments := []string{}
+	//healthyCount := 0
+	//healthyExperiments := []string{}
+
+	jumpStale := make(map[string]bool)
+	streamsStale := make(map[string]bool)
+
+	// check for staleness of reports
+	for k, v := range s.Experiments {
+
+		jumpStale[k] = (v.LastCheckedJump.Add(s.Config.HealthLast)).Before(now)
+		streamsStale[k] = (v.LastCheckedStreams.Add(s.Config.HealthLast)).Before(now)
+	}
+
+	jsc := 0
+	for _, v := range jumpStale {
+		if v {
+			jsc += 1
+		}
+	}
+	ssc := 0
+	for _, v := range streamsStale {
+		if v {
+			ssc += 1
+		}
+	}
+
+	log.WithFields(log.Fields{"jump": jumpStale, "streams": streamsStale}).Debugf("%d/%d jump stale, %d/%d streams stale", jsc, len(jumpStale), ssc, len(streamsStale))
+
+	if jsc == len(jumpStale) {
+		msg := "jump has no fresh reports so may be down"
+		log.Error(msg)
+		emailAlerts = append(emailAlerts, msg)
+	}
+
+	if ssc == len(streamsStale) {
+		msg := "relay has no fresh reports so may be down"
+		log.Error(msg)
+		emailAlerts = append(emailAlerts, msg)
+	}
 
 	for k, v := range s.Experiments {
 
@@ -459,8 +502,13 @@ func updateHealth(s *config.Status) {
 	msg := "To: " + toHeader + "\r\n" +
 		"Cc: " + ccHeader + "\r\n" +
 		"Subject: " + s.Config.EmailSubject + " " + count + " new health events \r\n" +
-		"\r\n" +
-		"There are " + count + " new health events: \r\n"
+		"\r\n"
+
+	if len(emailAlerts) > 0 {
+		msg += "\r\nSystem alerts:\r\n" + strings.Join(emailAlerts, "\r\n") + "\r\n"
+	}
+
+	msg += "There are " + count + " new health events: \r\n"
 
 	for k, v := range alerts {
 		if v {

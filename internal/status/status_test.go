@@ -360,7 +360,9 @@ func TestAllOK(t *testing.T) {
 	jr = reports.Jump["set00"].Reports
 	rr = reports.Relay["set00"].Reports
 
-	if debug {
+	verbose := false
+
+	if verbose {
 		fmt.Printf("\n\n%v\n\n", jr)
 		fmt.Printf("\n\n%v\n\n", rr)
 	}
@@ -387,7 +389,7 @@ func TestAllOK(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
-	if debug {
+	if verbose {
 
 		fmt.Printf("\n\nSET00\n%+v\n\n\n", s.Experiments)
 	}
@@ -402,7 +404,7 @@ func TestAllOK(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
-	if debug {
+	if verbose {
 
 		fmt.Printf("\n\nSET01\n%+v\n\n\n", s.Experiments)
 	}
@@ -417,7 +419,7 @@ func TestAllOK(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
-	if debug {
+	if verbose {
 
 		fmt.Printf("\n\nSET02\n%+v\n\n\n", s.Experiments)
 	}
@@ -432,7 +434,7 @@ func TestAllOK(t *testing.T) {
 
 	time.Sleep(time.Second)
 
-	if debug {
+	if verbose {
 
 		fmt.Printf("\n\nSET03\n%+v\n\n\n", s.Experiments)
 	}
