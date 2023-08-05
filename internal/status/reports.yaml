@@ -878,7 +878,22 @@ relay:
             Last: 100ms
             Size: 1000
             FPS: 25
-            
+      - topic: test02-st-data
+        canRead: true
+        canWrite: true
+        connectedAt: 2022-10-01T12:00:00+00:00
+        expiresAt: 2023-10-01T12:00:00+00:00
+        remoteAddr: "123.123.1.102"
+        userAgent: "unknown user agent"
+        scopes:
+          - read
+          - write
+          - expt
+        stats:
+          Tx:
+            Last: 100ms
+            Size: 1000
+            FPS: 25            
       - topic: test02-st-video
         canRead: true
         canWrite: true

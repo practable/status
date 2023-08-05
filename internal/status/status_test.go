@@ -541,33 +541,95 @@ func TestStatus(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 
 	setNow(t, time.Date(2022, 11, 5, 0, 2, 5, 0, time.UTC)) //keep steps smaller than config.HealthLast else relay reports appear stale
-	/*
-		jr = reports.Jump["set01"].Reports
-		rr = reports.Relay["set01"].Reports
 
-		j.Status <- jr
-		r.Status <- rr
+	jr = reports.Jump["set01"].Reports
+	rr = reports.Relay["set01"].Reports
 
-		time.Sleep(10 * time.Millisecond)
+	j.Status <- jr
+	r.Status <- rr
 
-		if verbose {
-			fmt.Printf("\n\nSET01\n%+v\n\n\n", s.Experiments)
-		}
+	time.Sleep(10 * time.Millisecond)
 
-		setNow(t, time.Date(2022, 11, 5, 0, 2, 10, 0, time.UTC))
+	if verbose {
+		fmt.Printf("\n\nSET01\n%+v\n\n\n", s.Experiments)
+	}
 
-		jr = reports.Jump["set02"].Reports
-		rr = reports.Relay["set02"].Reports
+	assert.Equal(t, true, s.Experiments["test00"].JumpOK)
+	assert.Equal(t, false, s.Experiments["test01"].JumpOK)
+	assert.Equal(t, false, s.Experiments["test02"].JumpOK)
+	assert.Equal(t, true, s.Experiments["test03"].JumpOK)
+	assert.Equal(t, true, s.Experiments["test04"].JumpOK)
+	assert.Equal(t, true, s.Experiments["test05"].JumpOK)
+	assert.Equal(t, true, s.Experiments["test06"].JumpOK)
+	assert.Equal(t, true, s.Experiments["test07"].JumpOK)
 
-		j.Status <- jr
-		r.Status <- rr
+	assert.Equal(t, false, s.Experiments["test00"].Available)
+	assert.Equal(t, true, s.Experiments["test01"].Available)
+	assert.Equal(t, false, s.Experiments["test02"].Available)
+	assert.Equal(t, true, s.Experiments["test03"].Available)
+	assert.Equal(t, false, s.Experiments["test04"].Available)
+	assert.Equal(t, true, s.Experiments["test05"].Available)
+	assert.Equal(t, false, s.Experiments["test06"].Available)
+	assert.Equal(t, false, s.Experiments["test07"].Available)
 
-		time.Sleep(100 * time.Millisecond)
+	assert.Equal(t, false, s.Experiments["test00"].StreamOK["test00-st-data"])
+	assert.Equal(t, true, s.Experiments["test01"].StreamOK["test01-st-data"])
+	assert.Equal(t, false, s.Experiments["test02"].StreamOK["test02-st-data"])
+	assert.Equal(t, true, s.Experiments["test03"].StreamOK["test03-st-data"])
+	assert.Equal(t, true, s.Experiments["test03"].StreamOK["test03-st-video"])
+	assert.Equal(t, true, s.Experiments["test04"].StreamOK["test04-st-data"])
+	assert.Equal(t, false, s.Experiments["test05"].StreamOK["test05-st-data"])
+	assert.Equal(t, true, s.Experiments["test05"].StreamOK["test05-st-video"])
+	assert.Equal(t, true, s.Experiments["test06"].StreamOK["test06-st-data"])
+	assert.Equal(t, false, s.Experiments["test06"].StreamOK["test06-st-video"])
+	assert.Equal(t, true, s.Experiments["test07"].StreamOK["test07-st-data"])
+	assert.Equal(t, false, s.Experiments["test07"].StreamOK["test07-st-video"])
 
-		if verbose {
-			fmt.Printf("\n\nSET02\n%+v\n\n\n", s.Experiments)
-		}
-	*/
+	setNow(t, time.Date(2022, 11, 5, 0, 2, 10, 0, time.UTC))
+
+	jr = reports.Jump["set02"].Reports
+	rr = reports.Relay["set02"].Reports
+
+	j.Status <- jr
+	r.Status <- rr
+
+	time.Sleep(100 * time.Millisecond)
+
+	if verbose {
+		fmt.Printf("\n\nSET02\n%+v\n\n\n", s.Experiments)
+	}
+
+	assert.Equal(t, true, s.Experiments["test00"].JumpOK)
+	assert.Equal(t, true, s.Experiments["test01"].JumpOK)
+	assert.Equal(t, true, s.Experiments["test02"].JumpOK)
+	assert.Equal(t, true, s.Experiments["test03"].JumpOK)
+	assert.Equal(t, true, s.Experiments["test04"].JumpOK)
+	assert.Equal(t, true, s.Experiments["test05"].JumpOK)
+	assert.Equal(t, true, s.Experiments["test06"].JumpOK)
+	assert.Equal(t, true, s.Experiments["test07"].JumpOK)
+
+	assert.Equal(t, true, s.Experiments["test00"].Available)
+	assert.Equal(t, true, s.Experiments["test01"].Available)
+	assert.Equal(t, true, s.Experiments["test02"].Available)
+	assert.Equal(t, true, s.Experiments["test03"].Available)
+	assert.Equal(t, true, s.Experiments["test04"].Available)
+	assert.Equal(t, true, s.Experiments["test05"].Available)
+	assert.Equal(t, false, s.Experiments["test06"].Available) //not in manifest, can't be available
+	assert.Equal(t, false, s.Experiments["test07"].Available) //not in manifest, can't be available
+
+	assert.Equal(t, true, s.Experiments["test00"].StreamOK["test00-st-data"])
+	assert.Equal(t, true, s.Experiments["test01"].StreamOK["test01-st-data"])
+	assert.Equal(t, true, s.Experiments["test02"].StreamOK["test02-st-data"])
+	assert.Equal(t, true, s.Experiments["test03"].StreamOK["test03-st-data"])
+	assert.Equal(t, true, s.Experiments["test03"].StreamOK["test03-st-video"])
+	assert.Equal(t, true, s.Experiments["test04"].StreamOK["test04-st-data"])
+	assert.Equal(t, true, s.Experiments["test05"].StreamOK["test05-st-data"])
+	assert.Equal(t, true, s.Experiments["test05"].StreamOK["test05-st-video"])
+	assert.Equal(t, true, s.Experiments["test06"].StreamOK["test06-st-data"])
+	assert.Equal(t, true, s.Experiments["test06"].StreamOK["test06-st-video"])
+	assert.Equal(t, true, s.Experiments["test07"].StreamOK["test07-st-data"])
+	assert.Equal(t, true, s.Experiments["test07"].StreamOK["test07-st-video"])
+
 	time.Sleep(100 * time.Millisecond)
 
 	msg := SMTPServer.Messages()
