@@ -488,6 +488,14 @@ func TestStatus(t *testing.T) {
 	// wait out the health startup of 1min, and then some, so we are starting next phase of test on an even 2min for ease of clock time editing
 
 	// Check current status
+	assert.Equal(t, true, s.Experiments["test00"].JumpOK)
+	assert.Equal(t, false, s.Experiments["test01"].JumpOK)
+	assert.Equal(t, true, s.Experiments["test02"].JumpOK)
+	assert.Equal(t, true, s.Experiments["test03"].JumpOK)
+	assert.Equal(t, true, s.Experiments["test04"].JumpOK)
+	assert.Equal(t, true, s.Experiments["test05"].JumpOK)
+	assert.Equal(t, true, s.Experiments["test06"].JumpOK)
+	assert.Equal(t, true, s.Experiments["test07"].JumpOK)
 
 	assert.Equal(t, false, s.Experiments["test00"].Available)
 	assert.Equal(t, true, s.Experiments["test01"].Available)
@@ -498,6 +506,21 @@ func TestStatus(t *testing.T) {
 	assert.Equal(t, false, s.Experiments["test06"].Available)
 	assert.Equal(t, false, s.Experiments["test07"].Available)
 
+	assert.Equal(t, false, s.Experiments["test00"].StreamOK["test00-st-data"])
+	assert.Equal(t, true, s.Experiments["test01"].StreamOK["test01-st-data"])
+	assert.Equal(t, false, s.Experiments["test02"].StreamOK["test02-st-data"])
+	assert.Equal(t, true, s.Experiments["test03"].StreamOK["test03-st-data"])
+	assert.Equal(t, true, s.Experiments["test03"].StreamOK["test03-st-video"])
+	assert.Equal(t, true, s.Experiments["test04"].StreamOK["test04-st-data"])
+	assert.Equal(t, true, s.Experiments["test05"].StreamOK["test05-st-data"])
+	assert.Equal(t, true, s.Experiments["test05"].StreamOK["test05-st-video"])
+	assert.Equal(t, true, s.Experiments["test06"].StreamOK["test06-st-data"])
+	assert.Equal(t, false, s.Experiments["test06"].StreamOK["test06-st-video"])
+	assert.Equal(t, true, s.Experiments["test07"].StreamOK["test07-st-data"])
+	assert.Equal(t, false, s.Experiments["test07"].StreamOK["test07-st-video"])
+
+	// these checks were helping with debugging the reports.yaml file
+	// you can't set Never in the reports.yaml file - instead set Last to the string "Never"
 	assert.Equal(t, true, s.Experiments["test06"].StreamReports["test06-st-video"].Stats.Tx.Never)
 	assert.Equal(t, false, s.Experiments["test07"].StreamReports["test07-st-video"].Stats.Tx.Never)
 	t.Logf("test06-st-video.Tx: %+v", s.Experiments["test06"].StreamReports["test06-st-video"].Stats.Tx)
