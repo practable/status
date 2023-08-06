@@ -326,7 +326,7 @@ func TestMain(m *testing.M) {
 		EmailCc:             []string{"cc@test.org"},
 		EmailFrom:           "admin@test.org",
 		EmailHost:           "localhost",
-		EmailLink:           "http://[::]:" + strconv.Itoa(portServe),
+		EmailLink:           "https://app.test.org/tenant/status", //don't include port because it breaks email tests by changing every run
 		EmailPassword:       "",
 		EmailPort:           portSMTP,
 		EmailSubject:        "test",
@@ -593,19 +593,23 @@ func TestStatus(t *testing.T) {
 	assert.Equal(t, false, s.Experiments["test07"].StreamOK["test07-st-video"])
 	s.Unlock()
 
-	setNow(t, time.Date(2022, 11, 5, 0, 2, 20, 0, time.UTC))
-
 	jr = reports.Jump["set02"].Reports
 	rr = reports.Relay["set02"].Reports
 
-	j.Status <- jr
-	r.Status <- rr
+	for i := 1; i < 10; i++ {
 
-	time.Sleep(100 * time.Millisecond)
+		setNow(t, loopTime)
 
-	if verbose {
-		fmt.Printf("\n\nSET02\n%+v\n\n\n", s.Experiments)
+		j.Status <- jr
+		r.Status <- rr
+
+		time.Sleep(time.Millisecond)
+
+		loopTime = loopTime.Add(10 * time.Second)
+
 	}
+
+	time.Sleep(10 * time.Millisecond)
 
 	s.Lock()
 	assert.Equal(t, true, s.Experiments["test00"].JumpOK)
@@ -644,59 +648,23 @@ func TestStatus(t *testing.T) {
 
 	msg := SMTPServer.Messages()
 
-	fmt.Printf("\n\nEmails\n%+v\n\n\n", msg)
+	msgs := []string{}
 
-	/*
+	for _, v := range msg {
+		msgs = append(msgs, v.MsgRequest())
+	}
 
-		Subject: test 8 new health events
+	msg0 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 8 new health events \r\n\r\nSystem time: 2022-11-05 00:01:10 +0000 UTC\r\nThere are 8 new health events (6 issues, 2 ok): \r\ntest00 ><   U [missing required test00-st-data]\r\ntest01 -- A   [missing jump]\r\ntest02 ><   U [missing required test02-st-data]\r\ntest04 ><   U [missing required test04-st-video]\r\ntest06 ><   U [unhealthy test06-st-video]\r\ntest07 ><   U [unhealthy test07-st-video]\r\ntest03 ok A   \r\ntest05 ok A   \r\n\r\n\r\n All new and existing health issues:\r\ntest00 ><   U [missing required test00-st-data]\r\ntest01 -- A   [missing jump]\r\ntest02 ><   U [missing required test02-st-data]\r\ntest04 ><   U [missing required test04-st-video]\r\ntest06 ><   U [unhealthy test06-st-video]\r\ntest07 ><   U [unhealthy test07-st-video]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
+	msg1 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 1 new health events \r\n\r\nSystem time: 2022-11-05 00:01:30 +0000 UTC\r\nThere are 1 new health events (1 issues, 0 ok): \r\ntest05 -- A   [unhealthy test05-st-data]\r\n\r\n\r\n All new and existing health issues:\r\ntest00 ><   U [missing required test00-st-data]\r\ntest01 -- A   [missing jump]\r\ntest02 ><   U [missing required test02-st-data]\r\ntest04 ><   U [missing required test04-st-video]\r\ntest05 -- A   [unhealthy test05-st-data]\r\ntest06 ><   U [unhealthy test06-st-video]\r\ntest07 ><   U [unhealthy test07-st-video]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
+	msg2 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 1 new health events \r\n\r\nSystem time: 2022-11-05 00:02:30 +0000 UTC\r\nThere are 1 new health events (1 issues, 0 ok): \r\ntest02 ><   U [missing jump, missing required test02-st-data]\r\n\r\n\r\n All new and existing health issues:\r\ntest00 ><   U [missing required test00-st-data]\r\ntest01 -- A   [missing jump]\r\ntest02 ><   U [missing jump, missing required test02-st-data]\r\ntest04 ><   U [missing required test04-st-video]\r\ntest05 -- A   [unhealthy test05-st-data]\r\ntest06 ><   U [unhealthy test06-st-video]\r\ntest07 ><   U [unhealthy test07-st-video]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
+	msg3 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 5 new health events \r\n\r\nSystem time: 2022-11-05 00:03:10 +0000 UTC\r\nThere are 5 new health events (0 issues, 5 ok): \r\ntest00 ok A   \r\ntest04 ok A   \r\ntest05 ok A   \r\ntest06 ok   U  \r\ntest07 ok   U  \r\n\r\n\r\n All new and existing health issues:\r\ntest01 -- A   [missing jump]\r\ntest02 -- A   [missing jump, missing required test02-st-data]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
+	msg4 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 2 new health events \r\n\r\nSystem time: 2022-11-05 00:03:10 +0000 UTC\r\nThere are 2 new health events (0 issues, 2 ok): \r\ntest01 ok A   \r\ntest02 ok A   \r\n\r\n\r\n All new and existing health issues:\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
 
-		System time: 2022-11-05 00:01:10 +0000 UTC
-		There are 8 new health events (4 issues, 4 ok):
-		test00 -- [missing jump, missing required test00-st-data]
-		test01 -- [unhealthy test01-st-data]
-		test02 -- [missing required test02-st-data]
-		test04 -- [missing required test04-st-video]
-		test03 ok
-		test05 ok
-		test06 ok
-		test07 ok
-
-
-		 All new and existing health issues:
-		test00 -- [missing jump,missing required test00-st-data]
-		test01 -- [unhealthy test01-st-data]
-		test02 -- [missing required test02-st-data]
-		test04 -- [missing required test04-st-video]
-
-
-
-	*/
-
-	//fmt.Printf("\n\nStatus\n%+v\n\n\n", s.Experiments)
-
-	// prepare reports
-	// send reports
-	// check no health events yet
-	// wait for just longer than health_startup
-	// resend reports
-	// check initial health events are accurate
-	// check errors are correct
-	// check email is correctly sent
-
-	/* Second status
-
-	    advance time by an hour
-
-		test04 gains video stream, becomes ok
-		test05 loses data stream, becomes unhealthy
-
-		email should
-		report test04 ok, test05 issues
-
-		include test00, test01, test05, test06, test07 in list of all issues
-
-	*/
-
+	assert.Equal(t, msg0, msgs[0])
+	assert.Equal(t, msg1, msgs[1])
+	assert.Equal(t, msg2, msgs[2])
+	assert.Equal(t, msg3, msgs[3])
+	assert.Equal(t, msg4, msgs[4])
 }
 
 func TestEmailBody(t *testing.T) {
