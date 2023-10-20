@@ -410,6 +410,11 @@ func TestGetStream(t *testing.T) {
 // TestStatus checks that reports are processed correctly
 func TestStatus(t *testing.T) {
 
+	// This test is somewhat timing sensitive - as status results can get redistributed into different emails
+	// when running under various test setting such as -v, -race, -v -race
+	// mostly alleviated by increasing delay between sections of the test to 2s, but occassional failure still
+	// results. If this causes a problem with github actions then revisit the test structure to mitigate.
+
 	s.Lock()
 	setNow(t, time.Date(2022, 11, 5, 0, 0, 0, 0, time.UTC))
 	s.Unlock()
@@ -472,7 +477,7 @@ func TestStatus(t *testing.T) {
 		j.Status <- jr
 		r.Status <- rr
 
-		time.Sleep(time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 
 		loopTime = loopTime.Add(10 * time.Second)
 
@@ -494,6 +499,8 @@ func TestStatus(t *testing.T) {
 	}
 
 	// wait out the health startup of 1min, and then some, so we are starting next phase of test on an even 2min for ease of clock time editing
+
+	time.Sleep(2000 * time.Millisecond) //this long delay is to ensure that events group up the same way when testing with -v -race (1000ms not sufficient)
 
 	// Check current status
 	s.Lock()
@@ -557,7 +564,7 @@ func TestStatus(t *testing.T) {
 		j.Status <- jr
 		r.Status <- rr
 
-		time.Sleep(time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 
 		loopTime = loopTime.Add(10 * time.Second)
 
@@ -566,6 +573,8 @@ func TestStatus(t *testing.T) {
 	if verbose {
 		fmt.Printf("\n\nSET01\n%+v\n\n\n", s.Experiments)
 	}
+
+	time.Sleep(2000 * time.Millisecond) //this long delay is to ensure that events group up the same way when testing with -v -race (1000ms not sufficient)
 
 	s.Lock()
 	assert.Equal(t, true, s.Experiments["test00"].JumpOK)
@@ -611,13 +620,13 @@ func TestStatus(t *testing.T) {
 		j.Status <- jr
 		r.Status <- rr
 
-		time.Sleep(time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 
 		loopTime = loopTime.Add(10 * time.Second)
 
 	}
 
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(2000 * time.Millisecond) //this long delay is to ensure that events group up the same way when testing with -v -race (1000ms not sufficient)
 
 	s.Lock()
 	assert.Equal(t, true, s.Experiments["test00"].JumpOK)
