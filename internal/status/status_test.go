@@ -54,6 +54,8 @@ type RelayReports struct {
 	Reports     []rc.Report
 }
 
+// lock s before using this function to avoid race, because this var is
+// shared with the status object (and unlock after)
 func setNow(t *testing.T, now time.Time) {
 	if debug {
 		t.Logf("Time now %s", now)
@@ -408,7 +410,9 @@ func TestGetStream(t *testing.T) {
 // TestStatus checks that reports are processed correctly
 func TestStatus(t *testing.T) {
 
+	s.Lock()
 	setNow(t, time.Date(2022, 11, 5, 0, 0, 0, 0, time.UTC))
+	s.Unlock()
 
 	assert.Equal(t, time.Date(2022, 11, 5, 0, 0, 0, 0, time.UTC), s.Now())
 
@@ -461,7 +465,9 @@ func TestStatus(t *testing.T) {
 
 	for i := 1; i < 10; i++ {
 
+		s.Lock()
 		setNow(t, loopTime)
+		s.Unlock()
 
 		j.Status <- jr
 		r.Status <- rr
@@ -544,8 +550,9 @@ func TestStatus(t *testing.T) {
 	rr = reports.Relay["set01"].Reports
 
 	for i := 1; i < 10; i++ { // must be longer than config.HealthLastChecked (1m) for test02's jump entry to expire
-
+		s.Lock()
 		setNow(t, loopTime)
+		s.Unlock()
 
 		j.Status <- jr
 		r.Status <- rr
@@ -597,8 +604,9 @@ func TestStatus(t *testing.T) {
 	rr = reports.Relay["set02"].Reports
 
 	for i := 1; i < 10; i++ {
-
+		s.Lock()
 		setNow(t, loopTime)
+		s.Unlock()
 
 		j.Status <- jr
 		r.Status <- rr
@@ -654,11 +662,11 @@ func TestStatus(t *testing.T) {
 		msgs = append(msgs, v.MsgRequest())
 	}
 
-	msg0 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 8 new health events \r\n\r\nSystem time: 2022-11-05 00:01:10 +0000 UTC\r\nThere are 8 new health events (6 issues, 2 ok): \r\ntest00 ><   U [missing required test00-st-data]\r\ntest01 -- A   [missing jump]\r\ntest02 ><   U [missing required test02-st-data]\r\ntest04 ><   U [missing required test04-st-video]\r\ntest06 ><   U [unhealthy test06-st-video]\r\ntest07 ><   U [unhealthy test07-st-video]\r\ntest03 ok A   \r\ntest05 ok A   \r\n\r\n\r\n All new and existing health issues:\r\ntest00 ><   U [missing required test00-st-data]\r\ntest01 -- A   [missing jump]\r\ntest02 ><   U [missing required test02-st-data]\r\ntest04 ><   U [missing required test04-st-video]\r\ntest06 ><   U [unhealthy test06-st-video]\r\ntest07 ><   U [unhealthy test07-st-video]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
+	msg0 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 8 new health events \r\n\r\nSystem time: 2022-11-05 00:01:00 +0000 UTC\r\nThere are 8 new health events (6 issues, 2 ok): \r\ntest00 ><   U [missing required test00-st-data]\r\ntest01 -- A   [missing jump]\r\ntest02 ><   U [missing required test02-st-data]\r\ntest04 ><   U [missing required test04-st-video]\r\ntest06 ><   U [unhealthy test06-st-video]\r\ntest07 ><   U [unhealthy test07-st-video]\r\ntest03 ok A   \r\ntest05 ok A   \r\n\r\n\r\n All new and existing health issues:\r\ntest00 ><   U [missing required test00-st-data]\r\ntest01 -- A   [missing jump]\r\ntest02 ><   U [missing required test02-st-data]\r\ntest04 ><   U [missing required test04-st-video]\r\ntest06 ><   U [unhealthy test06-st-video]\r\ntest07 ><   U [unhealthy test07-st-video]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
 	msg1 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 1 new health events \r\n\r\nSystem time: 2022-11-05 00:01:30 +0000 UTC\r\nThere are 1 new health events (1 issues, 0 ok): \r\ntest05 -- A   [unhealthy test05-st-data]\r\n\r\n\r\n All new and existing health issues:\r\ntest00 ><   U [missing required test00-st-data]\r\ntest01 -- A   [missing jump]\r\ntest02 ><   U [missing required test02-st-data]\r\ntest04 ><   U [missing required test04-st-video]\r\ntest05 -- A   [unhealthy test05-st-data]\r\ntest06 ><   U [unhealthy test06-st-video]\r\ntest07 ><   U [unhealthy test07-st-video]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
 	msg2 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 1 new health events \r\n\r\nSystem time: 2022-11-05 00:02:30 +0000 UTC\r\nThere are 1 new health events (1 issues, 0 ok): \r\ntest02 ><   U [missing jump, missing required test02-st-data]\r\n\r\n\r\n All new and existing health issues:\r\ntest00 ><   U [missing required test00-st-data]\r\ntest01 -- A   [missing jump]\r\ntest02 ><   U [missing jump, missing required test02-st-data]\r\ntest04 ><   U [missing required test04-st-video]\r\ntest05 -- A   [unhealthy test05-st-data]\r\ntest06 ><   U [unhealthy test06-st-video]\r\ntest07 ><   U [unhealthy test07-st-video]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
-	msg3 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 5 new health events \r\n\r\nSystem time: 2022-11-05 00:03:10 +0000 UTC\r\nThere are 5 new health events (0 issues, 5 ok): \r\ntest00 ok A   \r\ntest04 ok A   \r\ntest05 ok A   \r\ntest06 ok   U  \r\ntest07 ok   U  \r\n\r\n\r\n All new and existing health issues:\r\ntest01 -- A   [missing jump]\r\ntest02 -- A   [missing jump, missing required test02-st-data]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
-	msg4 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 2 new health events \r\n\r\nSystem time: 2022-11-05 00:03:10 +0000 UTC\r\nThere are 2 new health events (0 issues, 2 ok): \r\ntest01 ok A   \r\ntest02 ok A   \r\n\r\n\r\n All new and existing health issues:\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
+	msg3 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 5 new health events \r\n\r\nSystem time: 2022-11-05 00:03:00 +0000 UTC\r\nThere are 5 new health events (0 issues, 5 ok): \r\ntest00 ok A   \r\ntest04 ok A   \r\ntest05 ok A   \r\ntest06 ok   U  \r\ntest07 ok   U  \r\n\r\n\r\n All new and existing health issues:\r\ntest01 -- A   [missing jump]\r\ntest02 -- A   [missing jump, missing required test02-st-data]\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
+	msg4 := "To: to@test.org\r\nCc: cc@test.org\r\nSubject: test 2 new health events \r\n\r\nSystem time: 2022-11-05 00:03:00 +0000 UTC\r\nThere are 2 new health events (0 issues, 2 ok): \r\ntest01 ok A   \r\ntest02 ok A   \r\n\r\n\r\n All new and existing health issues:\r\n\r\n\r\n For the latest complete status information, please go to https://app.test.org/tenant/status\r\n"
 
 	assert.Equal(t, msg0, msgs[0])
 	assert.Equal(t, msg1, msgs[1])

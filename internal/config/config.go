@@ -105,10 +105,14 @@ func (s *Status) ClearExperiments() {
 }
 
 func (s *Status) WithConfig(config Config) *Status {
+	s.Lock()
+	defer s.Unlock()
 	s.Config = config
 	return s
 }
 
 func (s *Status) SetNow(now func() time.Time) {
+	s.Lock()
+	defer s.Unlock()
 	s.Now = now
 }
