@@ -39,7 +39,7 @@ func init() {
     "version": "0.1"
   },
   "host": "localhost",
-  "basePath": "/",
+  "basePath": "/api/v1",
   "paths": {
     "/experiments": {
       "get": {
@@ -432,7 +432,7 @@ func init() {
     "version": "0.1"
   },
   "host": "localhost",
-  "basePath": "/",
+  "basePath": "/api/v1",
   "paths": {
     "/experiments": {
       "get": {

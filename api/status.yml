@@ -9,7 +9,7 @@ info:
     name: Timothy Drysdale
     url: https://github.com/timdrysdale
 host: localhost
-basePath: /
+basePath: /api/v1
 securityDefinitions:
   Bearer:
     type: apiKey

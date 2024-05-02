@@ -26,10 +26,10 @@ import (
 //ro "github.com/practable/status/internal/relay/operations"
 //rm "github.com/practable/status/internal/relay/models"
 
-func NewReport(s *config.Status) config.Report {
+func NewReport(now time.Time) config.Report {
 
 	return config.Report{
-		FirstChecked:   s.Now(),
+		FirstChecked:   now,
 		Healthy:        false,
 		HealthEvents:   []config.HealthEvent{},
 		JumpOK:         false,
@@ -142,6 +142,8 @@ func connectBook(ctx context.Context, s *config.Status) {
 }
 
 func UpdateResourcesFromBook(ctx context.Context, s *config.Status) {
+	s.Lock()
+	defer s.Unlock()
 
 	c := bc.Config{
 		BasePath: "/api/v1",
@@ -190,7 +192,7 @@ func UpdateResourcesFromBook(ctx context.Context, s *config.Status) {
 
 		// initialise experiment's entry if not yet present
 		if _, ok := s.Experiments[r.TopicStub]; !ok {
-			s.Experiments[r.TopicStub] = NewReport(s) //pass status to get time
+			s.Experiments[r.TopicStub] = NewReport(s.Now()) //pass status to get time
 		}
 
 		ex := s.Experiments[r.TopicStub]
@@ -273,7 +275,7 @@ func updateFromJump(s *config.Status, reports []jc.Report) {
 
 		// initialise experiment's entry if not yet present
 		if _, ok := s.Experiments[r.Topic]; !ok {
-			s.Experiments[r.Topic] = NewReport(s) //pass status to get time
+			s.Experiments[r.Topic] = NewReport(s.Now()) //pass status to get time
 		}
 
 		expt := s.Experiments[r.Topic]
@@ -307,7 +309,7 @@ func updateFromRelay(s *config.Status, reports []rc.Report) {
 
 		// initialise experiment's entry if not yet present
 		if _, ok := s.Experiments[id]; !ok {
-			s.Experiments[id] = NewReport(s) //pass status to get time
+			s.Experiments[id] = NewReport(s.Now()) //pass status to get time
 		}
 
 		stream := r.Topic
