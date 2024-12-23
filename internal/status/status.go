@@ -314,10 +314,6 @@ func updateFromRelay(s *config.Status, reports []rc.Report) {
 
 		stream := r.Topic
 
-		if err != nil {
-			continue
-		}
-
 		expt := s.Experiments[id]
 
 		expt.StreamReports[stream] = r
@@ -328,7 +324,7 @@ func updateFromRelay(s *config.Status, reports []rc.Report) {
 			expt.StreamOK[stream] = false
 		}
 
-		if r.Stats.Tx.Never == true {
+		if r.Stats.Tx.Never {
 			expt.StreamOK[stream] = false
 		}
 
@@ -499,7 +495,7 @@ func updateHealth(s *config.Status) {
 		}
 
 		// all required streams must be present
-		for stream, _ := range v.StreamRequired {
+		for stream := range v.StreamRequired {
 			if _, ok := v.StreamOK[stream]; !ok {
 				h = false
 				a = false
@@ -656,7 +652,7 @@ func updateHealth(s *config.Status) {
 
 	msg := EmailBody(s, alerts, systemAlerts)
 
-	log.Errorf(msg)
+	log.Error(msg)
 	// EmailTo must be []string
 
 	hostPort := s.Config.EmailHost + ":" + strconv.Itoa(s.Config.EmailPort)
@@ -671,7 +667,7 @@ func updateHealth(s *config.Status) {
 	case "none":
 		err = smtp.SendMail(hostPort, nil, s.Config.EmailFrom, receivers, []byte(msg))
 	default:
-		err = fmt.Errorf("Email auth type unknown (%s), should be [plain, none]", s.Config.EmailAuthType)
+		err = fmt.Errorf("email auth type unknown (%s), should be [plain, none]", s.Config.EmailAuthType)
 	}
 
 	if err != nil {

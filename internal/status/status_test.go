@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	rt "github.com/go-openapi/runtime"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
 	smtpmock "github.com/mocktools/go-smtp-mock/v2"
@@ -27,7 +26,6 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-var bookAdminAuth rt.ClientAuthInfoWriter
 var ct time.Time
 var ctp *time.Time
 var debug bool
@@ -37,7 +35,6 @@ var resourcesJSON []byte
 var r *rc.Status
 var s *config.Status
 var SMTPServer *smtpmock.Server
-var timeout time.Duration
 
 type TestReports struct {
 	Jump  map[string]JumpReports  `yaml:"jump" json:"jump"`
@@ -170,7 +167,8 @@ func TestMain(m *testing.M) {
 	})
 	bmux.HandleFunc("/api/v1/admin/resources", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, string(resourcesJSON))
+		const format = "%s"
+		fmt.Fprintf(w, format, string(resourcesJSON))
 	}).Methods("GET")
 
 	bmux.HandleFunc("/api/v1/admin/resources/{name}", func(w http.ResponseWriter, r *http.Request) {
@@ -191,8 +189,8 @@ func TestMain(m *testing.M) {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, string(resp))
+		const format = "%s"
+		fmt.Fprintf(w, format, string(resp))
 	}).Methods("GET")
 
 	bmux.HandleFunc("/api/v1/admin/resources/{name}", func(w http.ResponseWriter, r *http.Request) {
