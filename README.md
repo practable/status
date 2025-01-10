@@ -107,3 +107,8 @@ Emails can only be sent as often as checks are performed, and only one email is 
 
 If you are seeing unexpected errors, it is likely a configuration issue. The openapi client code can be difficult to develop with because unexpected errors tend to throw an unmarshalling error rather than passing the server's error message. Hence some clients used by status are written using raw HTTP requests. If you are seeing unexpected errors, then it could well be a configuration error that is being masked by one of the clients that uses the openapi client code. In these cases, check the logs for the services to see whether something straightforward like a token generation error is preventing authentication, or whether requests are misdirected (e.g. incorrect base path such as using the wrong instance/tenant sub path). Note that `book` and `jump` currently require `/api/v1` in the base path but `relay` does not.
 
+## Development tools
+
+```
+go install github.com/go-swagger/go-swagger/cmd/swagger@latest
+```
