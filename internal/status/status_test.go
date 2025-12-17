@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
@@ -28,6 +27,7 @@ import (
 
 var ct time.Time
 var ctp *time.Time
+var relayReports []RelayReport
 var debug bool
 var j *jc.Status
 var resourcesYAML []byte
@@ -78,7 +78,7 @@ func init() {
 	// create JSON versions of the manifests
 	var err error
 
-	resourcesYAML, err = ioutil.ReadFile("resources.yaml")
+	resourcesYAML, err = os.ReadFile("resources.yaml")
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)
 		panic(err)
@@ -97,8 +97,17 @@ func TestMain(m *testing.M) {
 	defer cancel()
 
 	// Configure services
-	// we will run an instance of book, but mock jump and relay by inserting messages on the
-	// status reports channel
+	// run mock servers for book and relay, with handlers that
+	// substitute in the reports that are needed for each test.
+	// Note we can't run real, imported, instances because of
+	// jwt token middlelayer issue (see below)
+	// and github actions contraindicates starting command line executables
+	// but also, it is more efficient/repeatable to mock relay reports than
+	// to run a full relay instance with actual connections from clients.
+	// There is no need for jump for this version of the code, because jump still uses
+	// a websocket channel and that is at odds with the new design where
+	// we want to get the info we need, on demand. But the skeleton is there
+	// since it will be needed later.
 	// we will run a mock smtp server to check email contents
 
 	ports, err := freeport.GetFreePorts(5)
@@ -128,7 +137,7 @@ func TestMain(m *testing.M) {
 	schemeJump := "http"
 	schemeRelay := "http"
 
-	secretBook := "bb" // suggest using a uuid in production
+	secretBook := "bb" // in production, use a secret with decent entropy, like a uuid
 	secretJump := "jj"
 	secretRelay := "rr"
 
@@ -237,15 +246,16 @@ func TestMain(m *testing.M) {
 	}()
 
 	/***************************************************************************/
-	// start dummy jump and relay in an elegant way
-	// don't respond to access request until after tests finish,
-	//  meanwhile we can mock responses using the channel in the stats clients
+	// start mock jump and relay servers
+	// jump is not used for now, because it doesn't yet have an http API for status
+	// provide a handler for relay that substitutes in the reports we want for
+	// each test
 	/***************************************************************************/
 
 	idleConnsClosedJump := make(chan struct{})
 	idleConnsClosedRelay := make(chan struct{})
 
-	jmux := http.NewServeMux()
+	jmux := http.NewServeMux() // change to mux.Router() if using different endpoints
 	jmux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		<-shutdownMockServers
 		fmt.Fprintf(w, "You can safely ignore this error")
@@ -272,11 +282,57 @@ func TestMain(m *testing.M) {
 		close(idleConnsClosedJump)
 	}()
 
-	rmux := http.NewServeMux()
+	statsReport := RelayReport{
+		CanRead:     true,
+		CanWrite:    true,
+		ConnectedAt: jwt.TimeFunc().Format(time.RFC3339Nano),
+		ExpiresAt:   jwt.TimeFunc().Add(100 * time.Hour).Format(time.RFC3339Nano), //assume long running mock time test
+		RemoteAddr:  "1.1.1.1",
+		Scopes:      []string{"read", "write", "relay:stats"},
+		Topic:       "stats",
+		UserAgent:   "relay",
+	}
+
+	relayReports = []RelayReport{
+		statsReport,
+	}
+	// relay reports will be set by each test as needed
+
+	rmux := mux.NewRouter()
+
+	// a comment
+
 	rmux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		<-shutdownMockServers
-		fmt.Fprintf(w, "You can safely ignore this error")
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	})
+
+	// a comment
+
+	rmux.HandleFunc("/api/v1/status", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+
+		resp, err := json.Marshal(relayReports)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+		const format = "%s"
+		fmt.Fprintf(w, format, string(resp))
+	}).Methods("GET")
+
+	/*
+		w.WriteHeader(http.StatusOK)
+		resp, err := json.Marshal(relayReports)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+		const format = "%s"
+		fmt.Fprintf(w, format, string(resp))
+
+	*/
+	// a comment
+
 	rhost := ":" + strconv.Itoa(portRelay)
 
 	rsrv := http.Server{
@@ -321,7 +377,7 @@ func TestMain(m *testing.M) {
 	s.Config = config.Config{
 		BasepathBook:        "",
 		BasepathJump:        "",
-		BasepathRelay:       "",
+		BasepathRelay:       "/api/v1",
 		EmailAuthType:       "none",
 		EmailCc:             []string{"cc@test.org"},
 		EmailFrom:           "admin@test.org",
@@ -362,7 +418,7 @@ func TestMain(m *testing.M) {
 
 	j = jc.New()
 	r = rc.New()
-	go Run(ctx, j, r, s) //doesn't include the API server
+	//go Run(ctx, j, r, s) //doesn't include the API server
 
 	time.Sleep(100 * time.Millisecond) //let status start
 
@@ -405,8 +461,36 @@ func TestGetStream(t *testing.T) {
 
 }
 
+func TestMockRelay(t *testing.T) {
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	rr, err := RelayGetStatus(ctx, s.Config)
+
+	if err != nil {
+		t.Errorf("RelayGetStatus error: %v", err)
+	}
+
+	expected := []RelayReport{
+		RelayReport{
+			CanRead:     true,
+			CanWrite:    true,
+			ConnectedAt: "2022-11-05T00:00:00Z",
+			ExpiresAt:   "2022-11-09T04:00:00Z",
+			RemoteAddr:  "1.1.1.1",
+			Scopes:      []string{"read", "write", "relay:stats"},
+			Topic:       "stats",
+			UserAgent:   "relay",
+		},
+	}
+
+	assert.Equal(t, expected, rr)
+
+}
+
 // TestStatus checks that reports are processed correctly
-func TestStatus(t *testing.T) {
+func testStatus(t *testing.T) {
 
 	// This test is somewhat timing sensitive - as status results can get redistributed into different emails
 	// when running under various test setting such as -v, -race, -v -race
@@ -419,7 +503,7 @@ func TestStatus(t *testing.T) {
 
 	assert.Equal(t, time.Date(2022, 11, 5, 0, 0, 0, 0, time.UTC), s.Now())
 
-	reportsYAML, err := ioutil.ReadFile("reports.yaml")
+	reportsYAML, err := os.ReadFile("reports.yaml")
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)
 		panic(err)
@@ -490,7 +574,7 @@ func TestStatus(t *testing.T) {
 		sj, err := yaml.Marshal(s.Experiments)
 		s.Unlock()
 		assert.NoError(t, err)
-		err = ioutil.WriteFile("experiments.yaml", sj, 0644)
+		err = os.WriteFile("experiments.yaml", sj, 0644)
 		if err != nil {
 			panic(err)
 		}
@@ -697,7 +781,7 @@ func TestEmailBody(t *testing.T) {
 
 	s.Now = func() time.Time { return time.Date(2022, 11, 5, 0, 2, 10, 0, time.UTC) }
 
-	experimentsYAML, err := ioutil.ReadFile("experiments.yaml")
+	experimentsYAML, err := os.ReadFile("experiments.yaml")
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)
 		panic(err)

@@ -5,23 +5,30 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"path"
+	"io"
+	"net/http"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"net/smtp"
-
 	bc "github.com/practable/book/pkg/resource"
-	jc "github.com/practable/jump/pkg/status"
-	rc "github.com/practable/relay/pkg/status"
-	"github.com/practable/relay/pkg/token"
+	rt "github.com/practable/relay/pkg/token"
 	"github.com/practable/status/internal/config"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/exp/slices"
 )
+
+type RelayReport struct {
+	CanRead     bool     `json:"can_read"`
+	CanWrite    bool     `json:"can_write"`
+	ConnectedAt string   `json:"connected_at"`
+	ExpiresAt   string   `json:"expires_at"`
+	RemoteAddr  string   `json:"remote_addr"`
+	Scopes      []string `json:"scopes"`
+	Topic       string   `json:"topic"`
+	UserAgent   string   `json:"user_agent"`
+}
 
 type StatusUpdate struct {
 	UpdateFunc func(*config.Status)
@@ -39,6 +46,117 @@ func startStatusUpdater(s *config.Status) chan StatusUpdate {
 	return updateChan
 }
 
+// Func BookGetResources connects to the book server and gets the list of resources
+// the resources contain:
+//
+//	type About struct {
+//	    Name      string   `json:"name"`
+//	    Streams   []string `json:"streams"`
+//	    Tests     []string `json:"tests"`
+//	    TopicStub string   `json:"topic_stub"`
+//	}
+func BookGetResources(ctx context.Context, c config.Config) ([]bc.About, error) {
+
+	b := bc.Config{
+		BasePath: "/api/v1",
+		Host:     c.HostBook + c.BasepathBook,
+		Scheme:   c.SchemeBook,
+		Timeout:  time.Duration(5 * time.Second),
+	}
+
+	// make token with updated times
+	audience := c.SchemeBook + "://" + c.HostBook + c.BasepathBook
+	subject := "status-server"
+	secret := c.SecretBook
+	scopes := []string{"booking:admin"}
+
+	now := time.Now()
+
+	iat := now
+	nbf := now.Add(-1 * time.Second) // avoid clock skew issues
+	exp := now.Add(30 * time.Second) // short lived token for single API request
+
+	tk, err := bc.NewToken(audience, subject, secret, scopes, iat, nbf, exp)
+
+	b.Token = tk
+
+	log.WithFields(log.Fields{"basepath": b.BasePath, "host": b.Host, "scheme": b.Scheme, "token": b.Token}).Debug("book connection details")
+
+	if err != nil {
+		log.Errorf("connectBook error making token was %s", err.Error())
+		return nil, err
+	}
+
+	return b.GetResources()
+
+}
+
+func RelayGetStatus(ctx context.Context, c config.Config) ([]RelayReport, error) {
+
+	// create token
+	now := time.Now()
+
+	iat := now
+	nbf := now.Add(-1 * time.Second) // avoid clock skew issues
+	exp := now.Add(30 * time.Second) // short lived token for single API request
+
+	scopes := []string{"relay:stats"}
+
+	audience := c.SchemeRelay + "://" + c.HostRelay + c.BasepathRelay
+
+	// these ones don't matter much for relay stats, but populating anyway
+	bid := "status-server"
+	connectionType := "session"
+	topic := "stats"
+
+	bearer, err := rt.New(iat, nbf, exp, scopes, audience, bid, connectionType, c.SecretRelay, topic)
+
+	if err != nil {
+		return nil, errors.New("error making token: " + err.Error())
+	}
+
+	// GET from API
+	client := &http.Client{}
+	url := c.SchemeRelay + "://" + c.HostRelay + c.BasepathRelay + "/status"
+	log.Debugf("getStatus: url is %s", url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Errorf("getStatus: new request error was %s", err.Error())
+		return nil, err
+	}
+	req.Header.Add("Authorization", bearer)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Errorf("getStatus: do request error was %s", err.Error())
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != 200 {
+		log.Errorf("getStatus: Status code was %d", resp.StatusCode)
+		return nil, fmt.Errorf("status code was %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Errorf("GetStatus: io.ReadAll error is %s", err.Error())
+		return nil, err
+	}
+
+	results := []RelayReport{}
+	log.Tracef("GetStatus:  body is %s", string(body))
+
+	err = json.Unmarshal(body, &results)
+
+	if err != nil {
+		log.Errorf("GetStatus: unmarshal error is %s", err.Error())
+		return nil, err
+	}
+	return results, nil
+}
+
+/*
 func connectBook(ctx context.Context, s *config.Status, updateChan chan StatusUpdate) {
 	updateResourcesFromBook(updateChan) // do an initial update in case we aren't querying very often
 
@@ -133,6 +251,22 @@ func updateHealth(updateChan chan StatusUpdate) {
 			// check for staleness of reports
 			jumpStale := make(map[string]bool)
 			streamsStale := make(map[string]bool)
+
+			//TODO
+			//
+			//	change the philosophy from permanent connection, to connnection-on-demand
+			//	therefore, a stream is considered healthy if the current time
+			//	is between the connectedAt and expiresAt time
+            //
+			//	we'll do additional checks on data in the streams if needed, as a separate
+			//	task, not for this minimal update to get working with new relay again
+			//	(new relay has no stats)
+            //
+			//	There's very little point in trying to keep tabs on stats if we want a quick
+			//	check on whether a stream has connected or not, e.g. new immediate-use booking
+			//	has been made, and we've asked the experiment to connect - has it?
+			//	This should also reduce some of the false alerts with the current system
+
 
 			for k, v := range s.Experiments {
 
@@ -684,6 +818,7 @@ func updateFromRelay(reports []rc.Report, updateChan chan StatusUpdate) {
 		},
 	}
 }
+*/
 
 func getID(str string) (string, error) {
 
