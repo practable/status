@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/smtp"
+	"path"
 	"regexp"
 	"slices"
 	"sort"
@@ -15,6 +17,7 @@ import (
 	"time"
 
 	bc "github.com/practable/book/pkg/resource"
+	"github.com/practable/relay/pkg/token"
 	rt "github.com/practable/relay/pkg/token"
 	"github.com/practable/status/internal/config"
 	log "github.com/sirupsen/logrus"
@@ -68,7 +71,6 @@ func FindStreamEvents(current, last map[string]map[string]bool) (map[string]map[
 			}
 
 			if wasPresent { //gone missing
-				fmt.Printf("1: expt %s stream %s missing, wasPresent %s isPresent %s\n", expt, stream, strconv.FormatBool(wasPresent), strconv.FormatBool(isPresent))
 
 				if val, ok := events[expt]; !ok {
 					ev := make(map[string]bool)
@@ -98,8 +100,6 @@ func FindStreamEvents(current, last map[string]map[string]bool) (map[string]map[
 
 			if isPresent {
 				// either not present in the old map, or false in the old map, either way, it's new
-				fmt.Printf("2: expt %s stream %s new, wasPresent %s isPresent %s\n", expt, stream, strconv.FormatBool(wasPresent), strconv.FormatBool(isPresent))
-
 				if val, ok := events[expt]; !ok {
 					ev := make(map[string]bool)
 					ev[stream] = true
@@ -186,14 +186,6 @@ func CheckStreams(ctx context.Context, c config.Config) (map[string]map[string]b
 }
 
 // Func BookGetResources connects to the book server and gets the list of resources
-// the resources contain:
-//
-//	type About struct {
-//	    Name      string   `json:"name"`
-//	    Streams   []string `json:"streams"`
-//	    Tests     []string `json:"tests"`
-//	    TopicStub string   `json:"topic_stub"`
-//	}
 func BookGetResources(ctx context.Context, c config.Config) ([]bc.About, error) {
 
 	b := bc.Config{
@@ -295,85 +287,65 @@ func RelayGetStatus(ctx context.Context, c config.Config) ([]RelayReport, error)
 	return results, nil
 }
 
-/*
-func connectBook(ctx context.Context, s *config.Status, updateChan chan StatusUpdate) {
-	updateResourcesFromBook(updateChan) // do an initial update in case we aren't querying very often
+func Run(ctx context.Context, s *config.Status) {
+
+	//first check
+	err := updateHealth(ctx, s, true)
+
+	if err != nil {
+		log.Errorf("logHealth: error initialising status with the first health check: %s", err.Error())
+		return
+	}
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(s.Config.QueryBookEvery):
-			updateResourcesFromBook(updateChan)
-			updateHealth(updateChan) //force an update in case connections to relay and jump are down
+		case <-time.After(s.Config.HealthLogEvery):
+			err := updateHealth(ctx, s, false)
+			if err != nil {
+				log.Errorf("logHealth: error updating health: %s", err.Error())
+			}
 		}
+
 	}
 }
 
-func updateResourcesFromBook(updateChan chan StatusUpdate) {
-	updateChan <- StatusUpdate{
-		UpdateFunc: func(s *config.Status) {
+// make the experiment reports needed by the API
+func UpdateExperiments(ctx context.Context, s *config.Status) error {
 
-			now := s.Now()
+}
 
-			c := bc.Config{
-				BasePath: "/api/v1",
-				Host:     s.Config.HostBook + s.Config.BasepathBook,
-				Scheme:   s.Config.SchemeBook,
-				Timeout:  time.Duration(5 * time.Second),
-			}
+func UpdateStreams(ctx context.Context, s *config.Status, firstTime bool) error {
 
-			// make token with updated times
-			audience := s.Config.SchemeBook + "://" + s.Config.HostBook + s.Config.BasepathBook
-			subject := "status-server"
-			secret := s.Config.SecretBook
-			scopes := []string{"booking:admin"}
+	s.Unlock()
+	defer s.Lock()
 
-			iat := now
-			nbf := now.Add(-1 * time.Second)
-			exp := now.Add(s.Config.QueryBookEvery)
+	check, err := CheckStreams(ctx, s.Config)
 
-			tk, err := bc.NewToken(audience, subject, secret, scopes, iat, nbf, exp)
-
-			c.Token = tk
-
-			log.WithFields(log.Fields{"basepath": c.BasePath, "host": c.Host, "scheme": c.Scheme, "token": c.Token}).Debug("book connection details")
-
-			if err != nil {
-				log.Errorf("connectBook error making token was %s", err.Error())
-				return
-			}
-
-			resources, err := c.GetResources()
-
-			if err != nil {
-				log.Errorf("connectBook error getting resources was %s", err.Error())
-				return
-			}
-
-			log.Debugf("Book Resources:\n%+v\n", resources)
-
-			for _, v := range resources {
-				r := v
-				streams := make(map[string]bool)
-				for _, stream := range r.Streams {
-					fullStream := r.TopicStub + "-" + stream //this convention comes from the way manifest handle stream names
-					streams[fullStream] = true
-				}
-
-				// initialise experiment's entry if not yet present
-				if _, ok := s.Experiments[r.TopicStub]; !ok {
-					s.Experiments[r.TopicStub] = NewReport(now) //pass status to get time
-				}
-
-				ex := s.Experiments[r.TopicStub]
-				ex.StreamRequired = streams
-				ex.ResourceName = r.Name
-				ex.LastFoundInManifest = now
-				s.Experiments[r.TopicStub] = ex
-			}
-		},
+	if err != nil {
+		log.Errorf("updateHealth: error checking streams: %s", err.Error())
+		return
 	}
+
+	events := make(map[string]map[string]bool)
+
+	if !firstTime {
+
+		events, err := FindStreamEvents(check, s.LastCheck)
+
+		if err != nil {
+			log.Errorf("updateHealth: error finding stream events: %s", err.Error())
+			return
+		}
+	}
+
+	s.LastCheck = check
+
+	// use events to populate experiment reports
+
+	return
+
 }
 
 // this function is called by the status updater to update the health of the system
@@ -396,16 +368,15 @@ func updateHealth(updateChan chan StatusUpdate) {
 			//	change the philosophy from permanent connection, to connnection-on-demand
 			//	therefore, a stream is considered healthy if the current time
 			//	is between the connectedAt and expiresAt time
-            //
+			//
 			//	we'll do additional checks on data in the streams if needed, as a separate
 			//	task, not for this minimal update to get working with new relay again
 			//	(new relay has no stats)
-            //
+			//
 			//	There's very little point in trying to keep tabs on stats if we want a quick
 			//	check on whether a stream has connected or not, e.g. new immediate-use booking
 			//	has been made, and we've asked the experiment to connect - has it?
 			//	This should also reduce some of the false alerts with the current system
-
 
 			for k, v := range s.Experiments {
 
@@ -957,7 +928,6 @@ func updateFromRelay(reports []rc.Report, updateChan chan StatusUpdate) {
 		},
 	}
 }
-*/
 
 func getID(str string) (string, error) {
 

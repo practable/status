@@ -49,6 +49,7 @@ type Status struct {
 	Config Config
 	// key is the topic_stub,m e.g. pend00 (and not the resource name r-pend00)
 	Experiments map[string]Report
+	LastCheck   map[string]map[string]bool // hold the last check of the streams
 	Now         func() time.Time
 }
 
@@ -67,21 +68,23 @@ type HealthEvent struct {
 }
 
 // Report represents the status
+// when move to a signalling system
+// Might want to do a daily check where all are woken up, to connect so we can report status?
 type Report struct {
 	Available           bool
-	FirstChecked        time.Time
+	FirstChecked        time.Time //deprecate
 	Healthy             bool
-	HealthEvents        []HealthEvent
-	JumpOK              bool
-	JumpHealthy         bool
-	JumpReport          jc.Report
-	LastCheckedJump     time.Time
-	LastCheckedStreams  time.Time
-	LastFoundInManifest time.Time
+	HealthEvents        []HealthEvent // deprecate - will be on and off per booking in future??
+	JumpOK              bool          //deprecate
+	JumpHealthy         bool          // deprecate
+	JumpReport          jc.Report     //deprecate
+	LastCheckedJump     time.Time     // deprecate
+	LastCheckedStreams  time.Time     // deprecate
+	LastFoundInManifest time.Time     // deprecate
 	ResourceName        string
 	StreamOK            map[string]bool
-	StreamReports       map[string]rc.Report
-	StreamRequired      map[string]bool
+	StreamReports       map[string]rc.Report //deprecate
+	StreamRequired      map[string]bool      //deprecate
 }
 
 // New returns an Status with initialised maps
@@ -90,6 +93,7 @@ func New() *Status {
 		&sync.RWMutex{},
 		Config{},
 		make(map[string]Report),
+		make(map[string]map[string]bool),
 		func() time.Time { return time.Now() },
 	}
 

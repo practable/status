@@ -627,10 +627,6 @@ func TestFindStreamEvents(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expected, events)
 
-	fmt.Printf("events: %+v\n", events)
-
-	fmt.Printf("expect: %+v\n", expected)
-
 }
 
 // TestStatus checks that reports are processed correctly
