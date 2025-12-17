@@ -476,7 +476,7 @@ func TestMockRelay(t *testing.T) {
 		RelayReport{
 			CanRead:     true,
 			CanWrite:    true,
-			ConnectedAt: "2022-11-05T00:00:00Z",
+			ConnectedAt: "2022-11-05T00:00:00Z", // note format on real server has fractional seconds, e.g. 2025-12-16T15:32:36.886318471Z
 			ExpiresAt:   "2022-11-09T04:00:00Z",
 			RemoteAddr:  "1.1.1.1",
 			Scopes:      []string{"read", "write", "relay:stats"},
@@ -489,8 +489,44 @@ func TestMockRelay(t *testing.T) {
 
 }
 
+func TestMockBook(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	rm, err := BookGetResources(ctx, s.Config)
+
+	if err != nil {
+		t.Errorf("BookGetResources error: %v", err)
+	}
+
+	var exp map[string]bc.About
+
+	err = json.Unmarshal(resourcesJSON, &exp)
+	if err != nil {
+		t.Errorf("json.Unmarshal resources err   #%v ", err)
+	}
+
+	expected := make(map[string]bc.About)
+
+	// add in the name field to match how GetResources works
+	for k, v := range exp {
+		v.Name = k
+		expected[k] = v
+	}
+
+	actual := make(map[string]bc.About)
+
+	for _, v := range rm {
+
+		actual[v.Name] = v
+	}
+
+	assert.Equal(t, expected, actual)
+}
+
 // TestStatus checks that reports are processed correctly
 func testStatus(t *testing.T) {
+	t.Error("new status not implemented yet")
 
 	// This test is somewhat timing sensitive - as status results can get redistributed into different emails
 	// when running under various test setting such as -v, -race, -v -race
