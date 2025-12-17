@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -44,6 +45,74 @@ func startStatusUpdater(s *config.Status) chan StatusUpdate {
 		}
 	}()
 	return updateChan
+}
+
+func CheckStreams(ctx context.Context, c config.Config) (map[string]map[string]bool, error) {
+
+	// only connected streams are listed in the relay status info
+	// so consider a report that is present with scope "expt" to mean that stream is
+	// currently being supplied by an experiment
+	// we would need to check the quality of the stream in a separate quality check
+	// outside the scope of this code
+
+	resources, err := BookGetResources(ctx, c)
+
+	if err != nil {
+		return nil, errors.New("error getting book resources: " + err.Error())
+	}
+
+	// iterate over resources to get list of expected streams
+	// for each resource, we will make a map of the stream names
+	// to set us up to check them off from the relay report
+	// anything we expect that is not present, remains "false"
+	checkedStreams := make(map[string]map[string]bool)
+
+	for _, r := range resources {
+		name := r.TopicStub //avoid repeated field access
+		streams := make(map[string]bool)
+		for _, s := range r.Streams {
+			topic := name + "-" + s //this convention comes from the way manifest handle stream names
+			streams[topic] = false  //not checked it yet, so set false
+		}
+		checkedStreams[name] = streams
+	}
+
+	// We don't need to make a separate map for unexpected streams
+	// not in the manifest - we can simply add them to the list and
+	// report them as we find them in the relay report
+
+	status, err := RelayGetStatus(ctx, c)
+
+	if err != nil {
+		return nil, errors.New("error getting relay status: " + err.Error())
+	}
+
+	for _, r := range status {
+		// check for expt scope (we don't track non-experiment streams)
+		if !slices.Contains(r.Scopes, "expt") {
+			continue //skip non-experiment streams
+		}
+		s := r.Topic // complete stream name
+		// find which experiment this stream belongs to
+		name, err := getID(s) //assumes topic is of form <topicstub>-<streamname>
+		if err != nil {
+			log.Errorf("CheckStreams: error getting experiment name from stream %s: %s", s, err.Error())
+			continue
+		}
+
+		if _, ok := checkedStreams[name]; !ok {
+			// stream not from an experiment listed in manifest
+			// add a new entry for streams from this experiment
+			checkedStreams[name] = make(map[string]bool)
+		}
+
+		// extract the map of streams for this experiment, so we can edit it
+		streamsMap := checkedStreams[name]
+		streamsMap[s] = true //mark as connnected, because found in relay report
+		checkedStreams[name] = streamsMap
+	}
+
+	return checkedStreams, nil
 }
 
 // Func BookGetResources connects to the book server and gets the list of resources

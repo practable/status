@@ -28,6 +28,7 @@ import (
 var ct time.Time
 var ctp *time.Time
 var relayReports []RelayReport
+var statsReport RelayReport
 var debug bool
 var j *jc.Status
 var resourcesYAML []byte
@@ -282,7 +283,7 @@ func TestMain(m *testing.M) {
 		close(idleConnsClosedJump)
 	}()
 
-	statsReport := RelayReport{
+	statsReport = RelayReport{
 		CanRead:     true,
 		CanWrite:    true,
 		ConnectedAt: jwt.TimeFunc().Format(time.RFC3339Nano),
@@ -524,9 +525,80 @@ func TestMockBook(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
+func TestCheckStreams(t *testing.T) {
+
+	//TODO handle case of parallel tests modifying the shared relayReports var
+	ctx, cancel := context.WithCancel(context.Background())
+
+	defer cancel()
+
+	// advance time from the "start" of relay, when stats connected
+
+	s.Lock()
+	setNow(t, time.Date(2022, 11, 5, 1, 0, 0, 0, time.UTC))
+	s.Unlock()
+
+	assert.Equal(t, time.Date(2022, 11, 5, 1, 0, 0, 0, time.UTC), s.Now())
+
+	test00DataReport := RelayReport{
+		ConnectedAt: jwt.TimeFunc().Format(time.RFC3339Nano),
+		ExpiresAt:   jwt.TimeFunc().Add(100 * time.Hour).Format(time.RFC3339Nano), //assume long running mock time test
+		Scopes:      []string{"read", "write", "expt"},
+		Topic:       "test00-st-data",
+	}
+	test02DataReport := RelayReport{
+		ConnectedAt: jwt.TimeFunc().Format(time.RFC3339Nano),
+		ExpiresAt:   jwt.TimeFunc().Add(100 * time.Hour).Format(time.RFC3339Nano), //assume long running mock time test
+		Scopes:      []string{"read", "write", "expt"},
+		Topic:       "test02-st-data",
+	}
+	test02VideoReport := RelayReport{
+		ConnectedAt: jwt.TimeFunc().Format(time.RFC3339Nano),
+		ExpiresAt:   jwt.TimeFunc().Add(100 * time.Hour).Format(time.RFC3339Nano), //assume long running mock time test
+		Scopes:      []string{"read", "write", "expt"},
+		Topic:       "test02-st-video",
+	}
+	test99VideoReport := RelayReport{
+		ConnectedAt: jwt.TimeFunc().Format(time.RFC3339Nano),
+		ExpiresAt:   jwt.TimeFunc().Add(100 * time.Hour).Format(time.RFC3339Nano), //assume long running mock time test
+		Scopes:      []string{"read", "write", "expt"},
+		Topic:       "test99-st-video",
+	}
+
+	relayReports = []RelayReport{
+		statsReport,
+		test00DataReport,
+		test02DataReport,
+		test02VideoReport,
+		test99VideoReport,
+	}
+
+	check, err := CheckStreams(ctx, s.Config)
+
+	assert.NoError(t, err)
+
+	expected := map[string]map[string]bool{}
+
+	expected["test00"] = map[string]bool{"test00-st-data": true}
+
+	expected["test01"] = map[string]bool{"test01-st-data": false}
+
+	expected["test02"] = map[string]bool{"test02-st-data": true, "test02-st-video": true}
+
+	expected["test03"] = map[string]bool{"test03-st-data": false}
+
+	expected["test04"] = map[string]bool{"test04-st-data": false, "test04-st-video": false}
+
+	expected["test05"] = map[string]bool{"test05-st-data": false, "test05-st-video": false}
+
+	expected["test99"] = map[string]bool{"test99-st-video": true}
+
+	assert.Equal(t, expected, check)
+
+}
+
 // TestStatus checks that reports are processed correctly
 func testStatus(t *testing.T) {
-	t.Error("new status not implemented yet")
 
 	// This test is somewhat timing sensitive - as status results can get redistributed into different emails
 	// when running under various test setting such as -v, -race, -v -race
