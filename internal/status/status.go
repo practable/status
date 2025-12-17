@@ -47,6 +47,76 @@ func startStatusUpdater(s *config.Status) chan StatusUpdate {
 	return updateChan
 }
 
+// FindStreamEvents compares two maps of experiment streams
+// and returns a list of events for streams that have appeared or disappeared
+func FindStreamEvents(current, last map[string]map[string]bool) (map[string]map[string]bool, error) {
+
+	events := make(map[string]map[string]bool)
+
+	// check for streams we had before, that aren't present now
+	for expt, streams := range last {
+		for stream, wasPresent := range streams {
+
+			//fmt.Printf("checking expt %s stream %s was present: %s\n", expt, stream, strconv.FormatBool(wasPresent))
+
+			isPresent, ok := current[expt][stream]
+
+			if ok {
+				if wasPresent == isPresent {
+					continue // same, no event
+				}
+			}
+
+			if wasPresent { //gone missing
+				fmt.Printf("1: expt %s stream %s missing, wasPresent %s isPresent %s\n", expt, stream, strconv.FormatBool(wasPresent), strconv.FormatBool(isPresent))
+
+				if val, ok := events[expt]; !ok {
+					ev := make(map[string]bool)
+					ev[stream] = false
+					events[expt] = ev
+
+				} else {
+					val[stream] = false
+					events[expt] = val
+				}
+			}
+
+			// else still missing, no event
+		}
+	}
+
+	// check for new streams
+	for expt, streams := range current {
+		for stream, isPresent := range streams {
+			wasPresent, ok := last[expt][stream]
+
+			if ok {
+				if wasPresent == isPresent {
+					continue // same, no event
+				}
+			}
+
+			if isPresent {
+				// either not present in the old map, or false in the old map, either way, it's new
+				fmt.Printf("2: expt %s stream %s new, wasPresent %s isPresent %s\n", expt, stream, strconv.FormatBool(wasPresent), strconv.FormatBool(isPresent))
+
+				if val, ok := events[expt]; !ok {
+					ev := make(map[string]bool)
+					ev[stream] = true
+					events[expt] = ev
+
+				} else {
+					val[stream] = true
+					events[expt] = val
+				}
+			}
+		}
+	}
+
+	return events, nil
+
+}
+
 func CheckStreams(ctx context.Context, c config.Config) (map[string]map[string]bool, error) {
 
 	// only connected streams are listed in the relay status info

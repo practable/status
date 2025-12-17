@@ -597,6 +597,42 @@ func TestCheckStreams(t *testing.T) {
 
 }
 
+func TestFindStreamEvents(t *testing.T) {
+
+	last := map[string]map[string]bool{}
+	last["test00"] = map[string]bool{"test00-st-data": true}
+	last["test01"] = map[string]bool{"test01-st-data": false}
+	last["test02"] = map[string]bool{"test02-st-data": true, "test02-st-video": true}
+	last["test03"] = map[string]bool{"test03-st-data": false}
+	last["test04"] = map[string]bool{"test04-st-data": false, "test04-st-video": false}
+	last["test05"] = map[string]bool{"test05-st-data": false, "test05-st-video": true}
+	last["test99"] = map[string]bool{"test99-st-video": true}
+
+	current := map[string]map[string]bool{}
+	current["test00"] = map[string]bool{"test00-st-data": false}                          // went down
+	current["test01"] = map[string]bool{"test01-st-data": true}                           // came up
+	current["test02"] = map[string]bool{"test02-st-data": true, "test02-st-video": false} // video went down
+	current["test03"] = map[string]bool{"test03-st-data": false}                          // unchanged
+	current["test04"] = map[string]bool{"test04-st-data": true, "test04-st-video": false} // data came up
+	current["test05"] = map[string]bool{"test05-st-data": false, "test05-st-video": true} // unchanged
+	current["test99"] = map[string]bool{"test99-st-video": true}                          // unchanged
+
+	expected := make(map[string]map[string]bool)
+	expected["test00"] = map[string]bool{"test00-st-data": false}
+	expected["test01"] = map[string]bool{"test01-st-data": true}
+	expected["test02"] = map[string]bool{"test02-st-video": false}
+	expected["test04"] = map[string]bool{"test04-st-data": true}
+
+	events, err := FindStreamEvents(current, last)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, events)
+
+	fmt.Printf("events: %+v\n", events)
+
+	fmt.Printf("expect: %+v\n", expected)
+
+}
+
 // TestStatus checks that reports are processed correctly
 func testStatus(t *testing.T) {
 
