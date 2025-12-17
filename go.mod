@@ -5,6 +5,7 @@ go 1.22.0
 toolchain go1.23.4
 
 require (
+	github.com/eclesh/welford v0.0.0-20240205031321-ea1c1e3189c0
 	github.com/go-openapi/errors v0.22.0
 	github.com/go-openapi/loads v0.22.0
 	github.com/go-openapi/runtime v0.28.0
@@ -18,7 +19,7 @@ require (
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/mocktools/go-smtp-mock/v2 v2.1.0
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
-	github.com/practable/book v0.3.12-0.20230804082500-b532994076b1
+	github.com/practable/book v0.4.1
 	github.com/practable/jump v0.4.0
 	github.com/practable/relay v0.7.0
 	github.com/sirupsen/logrus v1.9.3
@@ -34,7 +35,6 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/eclesh/welford v0.0.0-20240205031321-ea1c1e3189c0 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/go-openapi/analysis v0.23.0 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect

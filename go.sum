@@ -613,6 +613,8 @@ github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndr
 github.com/posener/complete v1.2.3/go.mod h1:WZIdtGGp+qx0sLrYKtIRAruyNpv6hFCicSgv7Sy7s/s=
 github.com/practable/book v0.3.12-0.20230804082500-b532994076b1 h1:gnAqWbJaGQTLCXgkBM18fnJIR6OHQrSLdSgTI+79JZo=
 github.com/practable/book v0.3.12-0.20230804082500-b532994076b1/go.mod h1:fWhHbfJXeQBBc/JzVgGaBejf+t97V5g7kSOK3FWKQJ0=
+github.com/practable/book v0.4.1 h1:BAELbDMjTaWExA9ifbuThaCkqpuum65wr2dtjkghI6A=
+github.com/practable/book v0.4.1/go.mod h1:fWhHbfJXeQBBc/JzVgGaBejf+t97V5g7kSOK3FWKQJ0=
 github.com/practable/jump v0.4.0 h1:nckW01XQVfI3IQ+TdeZCSsZRp7mdVZi17EZwXLxRYWM=
 github.com/practable/jump v0.4.0/go.mod h1:lJ511o/XTsiK7Tz8QWK0m6egS+tH3pekhqyuTz+ms2A=
 github.com/practable/relay v0.7.0 h1:DQJK49PQRMDuh4SUB+E+iOuy/g1mNAS6I3HdvcUUAhQ=
